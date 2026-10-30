@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>知识库管理 · 门店补货与库存协同</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    display: flex; height: 100vh; background: #f4f6f9; color: #2c2c2a;
+  }
+  /* ===== 左侧导航（SaaS 后台风格） ===== */
+  .nav {
+    width: 220px; background: #085041; color: #fff; flex-shrink: 0;
+    display: flex; flex-direction: column;
+  }
+  .nav .brand { padding: 20px 18px; font-size: 15px; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,.12); }
+  .nav .brand small { display: block; font-size: 11px; font-weight: 400; color: #9fe1cb; margin-top: 4px; }
+  .nav a {
+    display: block; padding: 12px 18px; color: #cdeee2; font-size: 13px;
+    text-decoration: none; border-left: 3px solid transparent;
+  }
+  .nav a:hover { background: rgba(255,255,255,.08); }
+  .nav a.active { background: rgba(255,255,255,.12); border-left-color: #fac775; color: #fff; }
+  .nav a.disabled { opacity: .45; pointer-events: none; }
+  .nav .foot { margin-top: auto; padding: 16px 18px; font-size: 12px; color: #9fe1cb; }
+  .nav .foot a { padding: 0; color: #fac775; display: inline; border: none; }
+
+  /* ===== 主区 ===== */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .page-header { padding: 16px 28px; background: #fff; border-bottom: 1px solid #e5e5e5; }
+  .page-header h1 { font-size: 16px; font-weight: 600; }
+  .page-header p { font-size: 12px; color: #888780; margin-top: 4px; }
+  .content { flex: 1; overflow-y: auto; padding: 24px 28px; }
+
+  /* 上传卡片 */
+  .upload-card {
+    background: #fff; border: 1px solid #e5e5e5; border-radius: 12px;
+    padding: 20px 24px; margin-bottom: 20px;
+  }
+  .upload-card h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  .upload-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .upload-row input[type=file] { font-size: 13px; }
+  .upload-row select {
+    padding: 8px 10px; font-size: 13px; border: 1px solid #d3d1c7;
+    border-radius: 8px; background: #fff; outline: none;
+  }
+  .btn {
+    padding: 8px 18px; border: none; border-radius: 8px; cursor: pointer;
+    font-size: 13px; background: #0f6e56; color: #fff;
+  }
+  .btn:disabled { background: #b4b2a9; cursor: not-allowed; }
+  .btn-ghost { background: none; border: 1px solid #d3d1c7; color: #5f5e5a; }
+  .upload-tip { font-size: 12px; color: #b4b2a9; margin-top: 10px; }
+
+  /* 文档列表 */
+  .doc-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 20px 24px; }
+  .doc-card h2 { font-size: 14px; font-weight: 600; margin-bottom: 12px; }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; color: #888780; font-weight: 500; padding: 8px 10px; border-bottom: 1px solid #eee; }
+  td { padding: 10px; border-bottom: 1px solid #f4f4f4; }
+  tr:hover td { background: #fafbfc; }
+  .tag { display: inline-block; font-size: 11px; border-radius: 10px; padding: 2px 8px; background: #e1f5ee; color: #0f6e56; }
+  .btn-del { border: none; background: none; color: #a32d2d; cursor: pointer; font-size: 12px; }
+  .btn-del:hover { text-decoration: underline; }
+  .empty { color: #b4b2a9; font-size: 13px; text-align: center; padding: 24px 0; }
+
+  /* 消息提示 */
+  .toast {
+    position: fixed; top: 18px; right: 18px; padding: 10px 16px; border-radius: 8px;
+    font-size: 13px; display: none; z-index: 9;
+  }
+  .toast.ok { display: block; background: #eaf3de; border: 1px solid #97c459; color: #3b6d11; }
+  .toast.fail { display: block; background: #fcebeb; border: 1px solid #f09595; color: #a32d2d; }
+</style>
+</head>
+<body>
+
+<!-- 左侧导航 -->
+<aside class="nav">
+  <div class="brand">补货协同系统<small>总部管理后台</small></div>
+  <a class="active" href="/admin/kb">制度知识库</a>
+  <a href="/admin/prompts">提示词模板</a>
+  <a href="/admin/audit">对话审计</a>
+  <div class="foot"><span id="me"></span> · <a href="/">问答页</a> · <a href="javascript:logout()">退出</a></div>
+</aside>
+
+<!-- 主区 -->
+<section class="main">
+  <div class="page-header">
+    <h1>制度知识库管理</h1>
+    <p>上传补货制度、配送日历、促销规则、审批流程等文档，系统自动切片向量化后对问答生效</p>
+  </div>
+  <div class="content">
+
+    <!-- 上传区 -->
+    <div class="upload-card">
+      <h2>上传文档</h2>
+      <div class="upload-row">
+        <input type="file" id="file" accept=".md,.markdown,.txt,.pdf">
+        <select id="docType">
+          <option>补货制度</option>
+          <option>配送日历</option>
+          <option>促销规则</option>
+          <option>审批流程</option>
+          <option>其他</option>
+        </select>
+        <button class="btn" id="btnUpload">上传并入库</button>
+        <button class="btn btn-ghost" id="btnSeed">导入示例制度</button>
+      </div>
+      <p class="upload-tip">支持 md / txt / pdf（文字型），单文件 ≤ 5MB；上传后自动切片向量化，立即对问答生效</p>
+    </div>
+
+    <!-- 文档列表 -->
+    <div class="doc-card">
+      <h2>已入库文档</h2>
+      <table>
+        <thead><tr>
+          <th>标题</th><th>类型</th><th>切片数</th><th>上传人</th><th>时间</th><th style="width:60px"></th>
+        </tr></thead>
+        <tbody id="docBody"><tr><td colspan="6" class="empty">加载中…</td></tr></tbody>
+      </table>
+    </div>
+
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TOKEN = localStorage.getItem('token');
+
+/* 统一请求封装：带 JWT；401/403 跳登录 */
+async function apiFetch(url, options = {}) {
+  options.headers = Object.assign({}, options.headers, { 'Authorization': 'Bearer ' + TOKEN });
+  const resp = await fetch(url, options);
+  if (resp.status === 401 || resp.status === 403) {
+    localStorage.removeItem('token');
+    location.href = '/login';
+    throw new Error('unauthorized');
+  }
+  return resp;
+}
+function logout() { localStorage.removeItem('token'); location.href = '/login'; }
+
+/* 消息提示 */
+function toast(msg, ok) {
+  const t = document.getElementById('toast');
+  t.className = 'toast ' + (ok ? 'ok' : 'fail');
+  t.textContent = msg;
+  setTimeout(() => { t.className = 'toast'; }, 3500);
+}
+
+/* 挂载：校验 admin 角色 */
+async function initAuth() {
+  if (!TOKEN) { location.href = '/login'; return; }
+  try {
+    const resp = await apiFetch('/api/me');
+    const u = (await resp.json()).user;
+    if (u.role !== 'admin') { location.href = '/'; return; }
+    document.getElementById('me').textContent = u.sub;
+  } catch (e) {}
+}
+
+/* 加载文档列表 */
+async function loadDocs() {
+  const body = document.getElementById('docBody');
+  try {
+    const resp = await apiFetch('/api/kb/documents');
+    const docs = (await resp.json()).documents;
+    if (!docs.length) {
+      body.innerHTML = '<tr><td colspan="6" class="empty">暂无文档，请上传或点击「导入示例制度」</td></tr>';
+      return;
+    }
+    body.innerHTML = '';
+    docs.forEach(d => {
+      const tr = document.createElement('tr');
+      tr.innerHTML = '<td></td><td><span class="tag"></span></td><td></td><td></td><td></td><td><button class="btn-del">删除</button></td>';
+      tr.children[0].textContent = d.title;
+      tr.querySelector('.tag').textContent = d.doc_type || '其他';
+      tr.children[2].textContent = d.chunk_count;
+      tr.children[3].textContent = d.uploaded_by;
+      tr.children[4].textContent = (d.created_at || '').replace('T', ' ');
+      tr.querySelector('.btn-del').onclick = () => delDoc(d.id, d.title);
+      body.appendChild(tr);
+    });
+  } catch (e) {}
+}
+
+/* 上传文档 */
+document.getElementById('btnUpload').onclick = async () => {
+  const file = document.getElementById('file').files[0];
+  if (!file) { toast('请先选择文件', false); return; }
+  const btn = document.getElementById('btnUpload');
+  btn.disabled = true; btn.textContent = '上传中…';
+  try {
+    const fd = new FormData();
+    fd.append('file', file);
+    fd.append('doc_type', document.getElementById('docType').value);
+    const resp = await apiFetch('/api/kb/documents', { method: 'POST', body: fd });
+    const data = await resp.json();
+    if (resp.ok) { toast(data.message, true); document.getElementById('file').value = ''; loadDocs(); }
+    else toast(data.message || '上传失败', false);
+  } catch (e) {
+    toast('上传异常', false);
+  } finally { btn.disabled = false; btn.textContent = '上传并入库'; }
+};
+
+/* 导入示例制度 */
+document.getElementById('btnSeed').onclick = async () => {
+  const btn = document.getElementById('btnSeed');
+  btn.disabled = true;
+  try {
+    const resp = await apiFetch('/api/kb/seed', { method: 'POST' });
+    const data = await resp.json();
+    toast(data.message || (resp.ok ? '导入成功' : '导入失败'), resp.ok);
+    if (resp.ok) loadDocs();
+  } catch (e) { toast('导入异常', false); }
+  finally { btn.disabled = false; }
+};
+
+/* 删除文档 */
+async function delDoc(id, title) {
+  if (!confirm('确定删除《' + title + '》吗？其全部分片将从知识库移除。')) return;
+  try {
+    const resp = await apiFetch('/api/kb/documents/' + id, { method: 'DELETE' });
+    const data = await resp.json();
+    toast(data.message || (resp.ok ? '已删除' : '删除失败'), resp.ok);
+    if (resp.ok) loadDocs();
+  } catch (e) { toast('删除异常', false); }
+}
+
+initAuth().then(loadDocs);
+</script>
+</body>
+</html>

@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>对话审计 · 门店补货与库存协同</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    display: flex; height: 100vh; background: #f4f6f9; color: #2c2c2a;
+  }
+  .nav { width: 220px; background: #085041; color: #fff; flex-shrink: 0; display: flex; flex-direction: column; }
+  .nav .brand { padding: 20px 18px; font-size: 15px; font-weight: 600; border-bottom: 1px solid rgba(255,255,255,.12); }
+  .nav .brand small { display: block; font-size: 11px; font-weight: 400; color: #9fe1cb; margin-top: 4px; }
+  .nav a { display: block; padding: 12px 18px; color: #cdeee2; font-size: 13px; text-decoration: none; border-left: 3px solid transparent; }
+  .nav a:hover { background: rgba(255,255,255,.08); }
+  .nav a.active { background: rgba(255,255,255,.12); border-left-color: #fac775; color: #fff; }
+  .nav .foot { margin-top: auto; padding: 16px 18px; font-size: 12px; color: #9fe1cb; }
+  .nav .foot a { padding: 0; color: #fac775; display: inline; border: none; }
+
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .page-header { padding: 16px 28px; background: #fff; border-bottom: 1px solid #e5e5e5; }
+  .page-header h1 { font-size: 16px; font-weight: 600; }
+  .page-header p { font-size: 12px; color: #888780; margin-top: 4px; }
+  .content { flex: 1; overflow-y: auto; padding: 20px 28px; }
+
+  /* 筛选栏 */
+  .filter-card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px 20px; margin-bottom: 16px; display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+  .filter-card label { font-size: 12px; color: #888780; }
+  .filter-card select, .filter-card input {
+    padding: 7px 10px; font-size: 13px; border: 1px solid #d3d1c7; border-radius: 8px;
+    background: #fff; outline: none;
+  }
+  .btn { padding: 7px 16px; border: none; border-radius: 8px; cursor: pointer; font-size: 13px; background: #0f6e56; color: #fff; }
+  .chk { display: flex; align-items: center; gap: 5px; font-size: 13px; }
+
+  /* 记录列表 */
+  .rec { background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; padding: 12px 18px; margin-bottom: 10px; }
+  .rec .head { display: flex; align-items: center; gap: 10px; font-size: 13px; flex-wrap: wrap; }
+  .rec .q { flex: 1; min-width: 200px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .rec .meta { color: #888780; font-size: 12px; }
+  .flag { font-size: 11px; border-radius: 10px; padding: 2px 8px; }
+  .flag.r1 { background: #fcebeb; color: #a32d2d; border: 1px solid #f09595; }
+  .flag.r2, .flag.r3 { background: #fafeda; color: #854f0b; border: 1px solid #efc775; }
+  .badge-ok { font-size: 11px; background: #eaf3de; color: #3b6d11; border-radius: 10px; padding: 2px 8px; }
+  .btn-expand { border: 1px solid #d3d1c7; background: none; color: #5f5e5a; font-size: 12px; border-radius: 6px; padding: 3px 10px; cursor: pointer; }
+  .rec .detail { display: none; margin-top: 12px; border-top: 1px dashed #eee; padding-top: 12px; }
+  .rec.open .detail { display: block; }
+  .detail .line { font-size: 13px; line-height: 1.7; margin-bottom: 8px; }
+  .detail .role { color: #0f6e56; font-weight: 600; margin-right: 6px; }
+  .detail .flag-detail { font-size: 12px; color: #a32d2d; background: #fcebeb; border-radius: 6px; padding: 6px 10px; margin-bottom: 8px; }
+  .detail .src { font-size: 12px; color: #854f0b; background: #fafeda; border-radius: 6px; padding: 4px 10px; margin-right: 6px; display: inline-block; margin-bottom: 4px; }
+  .empty { color: #b4b2a9; font-size: 13px; text-align: center; padding: 30px 0; }
+  .toast { position: fixed; top: 18px; right: 18px; padding: 10px 16px; border-radius: 8px; font-size: 13px; display: none; z-index: 9; }
+  .toast.ok { display: block; background: #eaf3de; border: 1px solid #97c459; color: #3b6d11; }
+</style>
+</head>
+<body>
+
+<aside class="nav">
+  <div class="brand">补货协同系统<small>总部管理后台</small></div>
+  <a href="/admin/kb">制度知识库</a>
+  <a href="/admin/prompts">提示词模板</a>
+  <a class="active" href="/admin/audit">对话审计</a>
+  <div class="foot"><span id="me"></span> · <a href="/">问答页</a> · <a href="javascript:logout()">退出</a></div>
+</aside>
+
+<section class="main">
+  <div class="page-header">
+    <h1>对话审计</h1>
+    <p>全部门店问答记录；系统自动标记疑似异常（越权要求 / 模糊回答 / 低质量检索），标记仅供人工复核排序</p>
+  </div>
+  <div class="content">
+
+    <!-- 筛选栏 -->
+    <div class="filter-card">
+      <label>门店</label>
+      <select id="fStore"><option value="">全部</option></select>
+      <label>店长</label>
+      <select id="fUser"><option value="">全部</option></select>
+      <label>开始日期</label><input type="date" id="fStart">
+      <label>结束日期</label><input type="date" id="fEnd">
+      <label class="chk"><input type="checkbox" id="fFlag"> 仅看异常</label>
+      <button class="btn" id="btnFilter">查询</button>
+    </div>
+
+    <!-- 记录列表 -->
+    <div id="recList"><p class="empty">加载中…</p></div>
+
+  </div>
+</section>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const TOKEN = localStorage.getItem('token');
+
+async function apiFetch(url, options = {}) {
+  options.headers = Object.assign({}, options.headers, { 'Authorization': 'Bearer ' + TOKEN });
+  const resp = await fetch(url, options);
+  if (resp.status === 401 || resp.status === 403) {
+    localStorage.removeItem('token');
+    location.href = '/login';
+    throw new Error('unauthorized');
+  }
+  return resp;
+}
+function logout() { localStorage.removeItem('token'); location.href = '/login'; }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.className = 'toast ok'; t.textContent = msg;
+  setTimeout(() => { t.className = 'toast'; }, 2500);
+}
+
+async function initAuth() {
+  if (!TOKEN) { location.href = '/login'; return; }
+  try {
+    const resp = await apiFetch('/api/me');
+    const u = (await resp.json()).user;
+    if (u.role !== 'admin') { location.href = '/'; return; }
+    document.getElementById('me').textContent = u.sub;
+  } catch (e) {}
+}
+
+/* 加载筛选项（门店/店长下拉） */
+async function loadMeta() {
+  try {
+    const resp = await apiFetch('/api/audit/meta');
+    const meta = await resp.json();
+    const fStore = document.getElementById('fStore');
+    meta.stores.forEach(s => {
+      const o = document.createElement('option');
+      o.value = s.store_id; o.textContent = s.store_name + '（' + s.store_id + '）';
+      fStore.appendChild(o);
+    });
+    const fUser = document.getElementById('fUser');
+    meta.users.forEach(u => {
+      const o = document.createElement('option');
+      o.value = u.id; o.textContent = u.username + (u.store_name ? '（' + u.store_name + '）' : '（总部）');
+      fUser.appendChild(o);
+    });
+  } catch (e) {}
+}
+
+/* 加载审计记录 */
+async function loadAudit() {
+  const wrap = document.getElementById('recList');
+  const params = new URLSearchParams();
+  if (document.getElementById('fStore').value) params.set('store_id', document.getElementById('fStore').value);
+  if (document.getElementById('fUser').value) params.set('user_id', document.getElementById('fUser').value);
+  if (document.getElementById('fStart').value) params.set('start', document.getElementById('fStart').value);
+  if (document.getElementById('fEnd').value) params.set('end', document.getElementById('fEnd').value);
+  if (document.getElementById('fFlag').checked) params.set('flagged_only', 'true');
+
+  try {
+    const resp = await apiFetch('/api/audit?' + params.toString());
+    const records = (await resp.json()).records;
+    if (!records.length) {
+      wrap.innerHTML = '<p class="empty">暂无符合条件的记录</p>';
+      return;
+    }
+    wrap.innerHTML = '';
+    records.forEach(r => {
+      const div = document.createElement('div');
+      div.className = 'rec';
+      const head = document.createElement('div');
+      head.className = 'head';
+      head.innerHTML = '<span class="q"></span><span class="flags"></span><span class="meta"></span><button class="btn-expand">展开</button>';
+      head.querySelector('.q').textContent = r.question || '（无问题）';
+      const flagsSpan = head.querySelector('.flags');
+      if (r.flags.length) {
+        r.flags.forEach(f => {
+          const b = document.createElement('span');
+          b.className = 'flag ' + f.rule.toLowerCase();
+          b.textContent = f.rule + ' ' + f.label;
+          flagsSpan.appendChild(b);
+        });
+      } else {
+        flagsSpan.innerHTML = '<span class="badge-ok">正常</span>';
+      }
+      head.querySelector('.meta').textContent =
+        (r.store_name || '总部') + ' · ' + r.username + ' · ' + (r.created_at || '').replace('T', ' ');
+      head.querySelector('.btn-expand').onclick = () => toggleDetail(div, r);
+      div.appendChild(head);
+
+      // 展开详情（完整问答 + 标记原因 + 引用来源）
+      const detail = document.createElement('div');
+      detail.className = 'detail';
+      div.appendChild(detail);
+      wrap.appendChild(div);
+    });
+  } catch (e) {
+    wrap.innerHTML = '<p class="empty">加载失败</p>';
+  }
+}
+
+/* 展开/收起详情 */
+function toggleDetail(div, r) {
+  const detail = div.querySelector('.detail');
+  if (div.classList.contains('open')) { div.classList.remove('open'); return; }
+  detail.innerHTML = '';
+  // 标记原因
+  if (r.flags.length) {
+    r.flags.forEach(f => {
+      const fd = document.createElement('div');
+      fd.className = 'flag-detail';
+      fd.textContent = f.rule + ' ' + f.label + '：' + f.detail;
+      detail.appendChild(fd);
+    });
+  }
+  // 完整问答
+  const q = document.createElement('div');
+  q.className = 'line';
+  q.innerHTML = '<span class="role">问：</span>';
+  q.appendChild(document.createTextNode(r.question || ''));
+  const a = document.createElement('div');
+  a.className = 'line';
+  a.innerHTML = '<span class="role">答：</span>';
+  a.appendChild(document.createTextNode(r.answer || ''));
+  detail.appendChild(q); detail.appendChild(a);
+  // 引用来源
+  if (r.sources.length) {
+    const srcs = document.createElement('div');
+    r.sources.forEach(s => {
+      const sp = document.createElement('span');
+      sp.className = 'src';
+      sp.textContent = '《' + s.doc + '》·「' + s.section + '」';
+      srcs.appendChild(sp);
+    });
+    detail.appendChild(srcs);
+  }
+  div.classList.add('open');
+}
+
+document.getElementById('btnFilter').onclick = loadAudit;
+initAuth().then(() => { loadMeta(); loadAudit(); });
+</script>
+</body>
+</html>

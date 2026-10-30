@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>门店补货与库存协同 · 店长问答</title>
+<style>
+  /* ===== 全局 ===== */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    display: flex; height: 100vh; background: #f4f6f9; color: #2c2c2a;
+  }
+  /* ===== 左侧：会话历史侧栏 ===== */
+  .sidebar {
+    width: 240px; background: #ffffff; border-right: 1px solid #e5e5e5;
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .sidebar-header { padding: 16px; border-bottom: 1px solid #eee; }
+  .sidebar-header h1 { font-size: 15px; font-weight: 600; color: #0f6e56; }
+  .sidebar-header p { font-size: 12px; color: #888780; margin-top: 4px; }
+  .btn-new {
+    margin: 12px 16px 4px; padding: 9px; border: 1px solid #0f6e56;
+    background: #0f6e56; color: #fff; border-radius: 8px; cursor: pointer; font-size: 13px;
+  }
+  .btn-new:hover { background: #085041; }
+  .session-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .session-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 10px; border-radius: 8px; cursor: pointer; font-size: 13px;
+    color: #444; margin-bottom: 2px;
+  }
+  .session-item:hover { background: #e1f5ee; }
+  .session-item.active { background: #0f6e56; color: #fff; }
+  .session-item .title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .session-item .del {
+    visibility: hidden; border: none; background: none; color: inherit;
+    cursor: pointer; font-size: 14px; padding: 0 2px; opacity: .7;
+  }
+  .session-item:hover .del { visibility: visible; }
+  .session-empty { font-size: 12px; color: #b4b2a9; text-align: center; padding: 20px 0; }
+
+  /* ===== 右侧：聊天主区 ===== */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .chat-header { display: flex; align-items: center; justify-content: space-between; }
+  .chat-header .left { font-size: 14px; font-weight: 600; }
+  .chat-header .left span { font-size: 12px; font-weight: 400; color: #888780; margin-left: 8px; }
+  .chat-header .right { display: flex; align-items: center; gap: 10px; }
+  .user-badge { font-size: 12px; color: #0f6e56; background: #e1f5ee; border-radius: 12px; padding: 4px 10px; }
+  .btn-admin { font-size: 12px; color: #185fa5; background: #e6f1fb; border: none; border-radius: 12px; padding: 4px 10px; cursor: pointer; text-decoration: none; }
+  .btn-logout { font-size: 12px; color: #888780; background: none; border: 1px solid #d3d1c7; border-radius: 12px; padding: 4px 10px; cursor: pointer; }
+  .btn-logout:hover { color: #a32d2d; border-color: #f09595; }
+  .messages { flex: 1; overflow-y: auto; padding: 24px; }
+  .msg { max-width: 76%; margin-bottom: 16px; line-height: 1.7; }
+  .msg.user {
+    margin-left: auto; background: #0f6e56; color: #fff;
+    padding: 10px 14px; border-radius: 12px 12px 2px 12px; font-size: 14px;
+  }
+  .msg.assistant { background: #fff; border: 1px solid #e5e5e5; padding: 12px 16px; border-radius: 12px 12px 12px 2px; font-size: 14px; white-space: pre-wrap; }
+  /* 状态条：「正在检索补货制度…」 */
+  .status {
+    display: none; align-items: center; gap: 8px; font-size: 13px;
+    color: #1d9e75; margin-bottom: 12px;
+  }
+  .status.show { display: flex; }
+  .status .dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #1d9e75;
+    animation: blink 1s infinite;
+  }
+  @keyframes blink { 50% { opacity: .25; } }
+  /* 引用来源卡片（回答底部） */
+  .sources {
+    max-width: 76%; margin-bottom: 16px; font-size: 12px;
+  }
+  .sources .card {
+    background: #fafeda; border: 1px solid #efc775; border-radius: 8px;
+    padding: 8px 12px; margin-top: 6px;
+  }
+  .sources .card .src-title { color: #854f0b; font-weight: 600; }
+  .sources .card .src-snippet { color: #633806; margin-top: 3px; }
+  /* 错误提示 */
+  .error {
+    max-width: 76%; margin-bottom: 16px; background: #fcebeb;
+    border: 1px solid #f09595; color: #a32d2d; border-radius: 8px;
+    padding: 10px 14px; font-size: 13px;
+  }
+  /* ===== 底部输入区 ===== */
+  .quick-row { padding: 0 24px 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .quick-btn {
+    padding: 6px 12px; font-size: 12px; border: 1px solid #5dcaa5;
+    background: #e1f5ee; color: #0f6e56; border-radius: 14px; cursor: pointer;
+  }
+  .quick-btn:hover { background: #9fe1cb; }
+  .input-row {
+    display: flex; gap: 10px; padding: 12px 24px 20px; background: #f4f6f9;
+  }
+  .input-row textarea {
+    flex: 1; resize: none; border: 1px solid #d3d1c7; border-radius: 10px;
+    padding: 10px 14px; font-size: 14px; font-family: inherit; height: 46px;
+    outline: none; background: #fff;
+  }
+  .input-row textarea:focus { border-color: #0f6e56; }
+  .btn-send {
+    padding: 0 22px; border: none; background: #0f6e56; color: #fff;
+    border-radius: 10px; cursor: pointer; font-size: 14px;
+  }
+  .btn-send:disabled { background: #b4b2a9; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<!-- ===== 左侧栏：会话历史 ===== -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h1>店长问答助手</h1>
+    <p>补货制度 · 智能问答</p>
+  </div>
+  <button class="btn-new" id="btnNew">＋ 新建会话</button>
+  <div class="session-list" id="sessionList">
+    <div class="session-empty">暂无历史会话</div>
+  </div>
+</aside>
+
+<!-- ===== 主区：聊天 ===== -->
+<section class="main">
+  <div class="chat-header">
+    <div class="left">补货制度问答 <span>回答依据制度文档生成，仅供执行参考</span></div>
+    <div class="right">
+      <span class="user-badge" id="userBadge" style="display:none"></span>
+      <a class="btn-admin" id="btnAdmin" href="/admin" style="display:none">管理后台</a>
+      <button class="btn-logout" onclick="logout()">退出</button>
+    </div>
+  </div>
+  <div class="messages" id="messages"></div>
+
+  <!-- 快捷提问按钮（店长高频三问） -->
+  <div class="quick-row">
+    <button class="quick-btn" onclick="askQuick(this)">整箱规格是什么？</button>
+    <button class="quick-btn" onclick="askQuick(this)">促销期间怎么报数？</button>
+    <button class="quick-btn" onclick="askQuick(this)">超过分配上限怎么办？</button>
+  </div>
+
+  <div class="input-row">
+    <textarea id="input" placeholder="输入补货制度相关问题，回车发送…" maxlength="500"></textarea>
+    <button class="btn-send" id="btnSend">发送</button>
+  </div>
+</section>
+
+<script>
+/* ============================================================
+ * 认证：token 管理 + 统一请求封装
+ * ============================================================ */
+const TOKEN = localStorage.getItem('token');
+
+/* 统一请求封装：自动携带 JWT；401/403 时跳回登录页 */
+async function apiFetch(url, options = {}) {
+  options.headers = Object.assign({}, options.headers, { 'Authorization': 'Bearer ' + TOKEN });
+  const resp = await fetch(url, options);
+  if (resp.status === 401 || resp.status === 403) {
+    localStorage.removeItem('token');
+    location.href = '/login';
+    throw new Error('unauthorized');
+  }
+  return resp;
+}
+
+/* 页面挂载：校验登录态并显示用户标识 */
+async function initAuth() {
+  if (!TOKEN) { location.href = '/login'; return false; }
+  try {
+    const resp = await apiFetch('/api/me');
+    const data = await resp.json();
+    const u = data.user;
+    const badge = document.getElementById('userBadge');
+    badge.style.display = '';
+    badge.textContent = u.role === 'admin'
+      ? u.sub + '（总部管理员）'
+      : u.sub + '（' + (u.store_name || '门店') + '）';
+    if (u.role === 'admin') document.getElementById('btnAdmin').style.display = '';
+    return true;
+  } catch (e) { return false; }
+}
+function logout() {
+  localStorage.removeItem('token');
+  location.href = '/login';
+}
+
+/* ============================================================
+ * 全局状态
+ * ============================================================ */
+let currentSessionId = null;   // 当前会话 ID（null = 新会话，首次回答后由 done 事件回填）
+let busy = false;              // 是否正在等待回答（防重复发送）
+
+const $messages = document.getElementById('messages');
+const $input = document.getElementById('input');
+const $btnSend = document.getElementById('btnSend');
+const $sessionList = document.getElementById('sessionList');
+
+/* ============================================================
+ * 工具函数
+ * ============================================================ */
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function scrollBottom() { $messages.scrollTop = $messages.scrollHeight; }
+
+function addUserMsg(text) {
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.textContent = text;
+  $messages.appendChild(div); scrollBottom();
+}
+function addAssistantMsg() {
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+  $messages.appendChild(div); scrollBottom();
+  return div;
+}
+/* 显示状态条（「正在检索补货制度…」/「正在生成回答…」） */
+let $status = null;
+function showStatus(text) {
+  hideStatus();
+  $status = document.createElement('div');
+  $status.className = 'status show';
+  $status.innerHTML = '<span class="dot"></span><span></span>';
+  $status.lastChild.textContent = text;
+  $messages.appendChild($status); scrollBottom();
+}
+function hideStatus() { if ($status) { $status.remove(); $status = null; } }
+
+/* 展示引用来源卡片：《文档名》·「章节」+ 原文片段 */
+function addSources(sources) {
+  if (!sources || !sources.length) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'sources';
+  wrap.innerHTML = '<div style="color:#888780">引用来源：</div>';
+  sources.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = '<div class="src-title"></div><div class="src-snippet"></div>';
+    card.querySelector('.src-title').textContent = '《' + s.doc + '》·「' + s.section + '」';
+    card.querySelector('.src-snippet').textContent = s.snippet;
+    wrap.appendChild(card);
+  });
+  $messages.appendChild(wrap); scrollBottom();
+}
+
+/* 展示错误（后端约定的中文错误信息） */
+function addError(code, message) {
+  const div = document.createElement('div');
+  div.className = 'error';
+  div.textContent = '出错了（' + code + '）：' + message;
+  $messages.appendChild(div); scrollBottom();
+}
+
+/* ============================================================
+ * 核心流程：发送问题 → 解析 SSE 流 → 打字机渲染
+ * 浏览器原生 EventSource 只支持 GET，所以用 fetch + ReadableStream
+ * ============================================================ */
+async function ask(question) {
+  if (busy || !question) return;
+  busy = true; $btnSend.disabled = true; $input.value = '';
+  addUserMsg(question);
+
+  const bubble = addAssistantMsg();      // 回答气泡（流式填充 = 打字机效果）
+  let answer = '';
+
+  try {
+    const resp = await apiFetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: currentSessionId, question: question })
+    });
+
+    // ---- 建流前错误：后端返回普通 JSON {code, message} ----
+    const ctype = resp.headers.get('content-type') || '';
+    if (!resp.ok || !ctype.includes('event-stream')) {
+      let e = { code: 'HTTP_' + resp.status, message: '请求失败' };
+      try { e = await resp.json(); } catch (_) {}
+      addError(e.code, e.message);
+      return;
+    }
+
+    // ---- 逐块读取 SSE 流并解析事件 ----
+    const reader = resp.body.getReader();
+    const decoder = new TextDecoder();
+    let buf = '';
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += decoder.decode(value, { stream: true });
+
+      // SSE 事件以空行（\n\n）分隔
+      let idx;
+      while ((idx = buf.indexOf('\n\n')) >= 0) {
+        const block = buf.slice(0, idx); buf = buf.slice(idx + 2);
+        let event = 'message', data = '';
+        block.split('\n').forEach(line => {
+          if (line.startsWith('event:')) event = line.slice(6).trim();
+          else if (line.startsWith('data:')) data += line.slice(5).trim();
+        });
+        if (!data) continue;
+        handleEvent(event, JSON.parse(data), bubble, a => { answer = a; });
+      }
+    }
+  } catch (e) {
+    addError('NETWORK_ERROR', '网络异常，请检查服务是否已启动');
+  } finally {
+    hideStatus();
+    busy = false; $btnSend.disabled = false;
+    if (currentSessionId) loadSessions();   // 新会话首次回答后刷新侧栏
+  }
+}
+
+/* SSE 事件分发 */
+function handleEvent(event, data, bubble, setAnswer) {
+  if (event === 'status') {
+    showStatus(data.message);              // 「正在检索补货制度…」等
+  } else if (event === 'delta') {
+    hideStatus();
+    bubble.textContent += data.content;    // 追加片段 → 打字机效果
+    scrollBottom();
+    setAnswer(bubble.textContent);
+  } else if (event === 'sources') {
+    addSources(data.sources);              // 回答底部引用来源
+  } else if (event === 'done') {
+    currentSessionId = data.session_id;    // 新会话在此回填 ID
+  } else if (event === 'error') {
+    addError(data.code, data.message);     // 流内中文错误
+  }
+}
+
+/* 快捷提问按钮 */
+function askQuick(btn) { ask(btn.textContent.trim()); }
+
+/* ============================================================
+ * 会话侧栏：加载列表 / 切换 / 删除 / 新建
+ * ============================================================ */
+async function loadSessions() {
+  const resp = await apiFetch('/sessions');
+  const data = await resp.json();
+  $sessionList.innerHTML = '';
+  if (!data.sessions.length) {
+    $sessionList.innerHTML = '<div class="session-empty">暂无历史会话</div>';
+    return;
+  }
+  data.sessions.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'session-item' + (s.id === currentSessionId ? ' active' : '');
+    item.innerHTML = '<span class="title"></span><button class="del" title="删除">✕</button>';
+    item.querySelector('.title').textContent = s.title || s.id;
+    item.onclick = ev => { if (ev.target.className !== 'del') switchSession(s.id); };
+    item.querySelector('.del').onclick = () => deleteSession(s.id);
+    $sessionList.appendChild(item);
+  });
+}
+
+/* 切换会话：加载历史消息（含引用来源） */
+async function switchSession(id) {
+  if (busy) return;
+  currentSessionId = id;
+  $messages.innerHTML = '';
+  const resp = await apiFetch('/sessions/' + id + '/messages');
+  const data = await resp.json();
+  (data.messages || []).forEach(m => {
+    addUserMsg2(m.content, m.role);
+    if (m.sources) addSources(m.sources);
+  });
+  loadSessions();
+  scrollBottom();
+}
+/* 按 role 渲染历史消息（user 绿色 / assistant 白色） */
+function addUserMsg2(text, role) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;
+  $messages.appendChild(div);
+}
+
+async function deleteSession(id) {
+  if (!confirm('确定删除该会话吗？')) return;
+  if (id === currentSessionId) { currentSessionId = null; $messages.innerHTML = ''; }
+  await apiFetch('/sessions/' + id, { method: 'DELETE' });
+  loadSessions();
+}
+
+document.getElementById('btnNew').onclick = () => {
+  if (busy) return;
+  currentSessionId = null;
+  $messages.innerHTML = '';
+  loadSessions();
+};
+
+/* ============================================================
+ * 输入框：回车发送 / 按钮发送
+ * ============================================================ */
+$btnSend.onclick = () => ask($input.value.trim());
+$input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask($input.value.trim()); }
+});
+
+/* 页面加载：先校验登录态，再拉会话列表 */
+initAuth().then(ok => { if (ok) loadSessions(); });
+</script>
+</body>
+</html>
