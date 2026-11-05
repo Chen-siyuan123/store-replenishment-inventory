@@ -33,7 +33,7 @@ from agent import store
 from agent.harness import Harness
 
 KB_MD = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                     "..", "补货制度.md")
+                     "..", "data", "补货制度.md")
 
 
 # ============================================================

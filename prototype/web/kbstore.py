@@ -31,7 +31,7 @@ from kb import EMBED_DIM
 
 WEB_DIR = os.path.dirname(os.path.abspath(__file__))
 UPLOAD_DIR = os.path.join(WEB_DIR, "uploads")     # 上传原件留存目录
-SEED_KB_PATH = os.path.join(os.path.dirname(WEB_DIR), "补货制度.md")  # 种子文档
+SEED_KB_PATH = os.path.join(os.path.dirname(WEB_DIR), "data", "补货制度.md")  # 种子文档
 
 ALLOWED_EXT = {".md", ".markdown", ".txt", ".pdf"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5MB
@@ -351,7 +351,7 @@ class KBStore:
         return [dict(r) for r in rows]
 
     def seed_default(self, uploaded_by: str = "system") -> bool:
-        """导入种子文档（prototype/补货制度.md）。已存在同名文档或导入失败返回 False。"""
+        """导入种子文档（prototype/data/补货制度.md）。已存在同名文档或导入失败返回 False。"""
         if not os.path.exists(SEED_KB_PATH):
             return False
         with open(SEED_KB_PATH, "rb") as f:
