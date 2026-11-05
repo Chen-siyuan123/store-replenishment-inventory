@@ -44,6 +44,7 @@ import uuid
 import db
 import llm
 import tools
+from agent import incidents as incident_rules
 from agent import store
 
 # 单次提问的最大决策轮数（产品约束：5 轮）
@@ -268,6 +269,11 @@ class Harness:
             # 令牌过期/账实未确认等：如实告知，不假装成功
             self.status = "failed"
             self.answer = f"补货草稿创建失败：{result.get('message', '未知原因')}。请重新核对后再试。"
+            # 建单失败若属于停止条件（账实未确认/促销版本缺失），同样要有人接手
+            if result.get("blocking"):
+                self._record_incident(tool=action["tool"], code=result.get("code"),
+                                      reason=result.get("blocking_reason") or result.get("message"),
+                                      args=args)
         for piece in _chunk_text(self.answer):
             yield ("delta", {"content": piece})
 
@@ -396,6 +402,15 @@ class Harness:
                                code=result.get("code"), duration_ms=elapsed,
                                result_summary=result.get("message", ""))
 
+                # ③-b 命中业务停止条件 → 立刻开一张转交单（f44：原因/接手人/时限）
+                #     模型说「请你联系计划员」只是措辞，这张单才是可追踪的事实。
+                incident = None
+                if result.get("blocking"):
+                    incident = self._record_incident(
+                        tool=name, code=result.get("code"),
+                        reason=result.get("blocking_reason") or result.get("message"),
+                        args=args)
+
                 self.tool_trace.append({
                     "tool": name, "label": label, "args": args,
                     "ok": result.get("ok", False),
@@ -409,7 +424,9 @@ class Harness:
                                 "ok": result.get("ok", False),
                                 "blocking": result.get("blocking", False),
                                 "code": result.get("code"),
-                                "summary": result.get("message", "")})
+                                "summary": result.get("message", ""),
+                                # 前端据此在轨迹行下方挂一行「已转交 X，某时前处理」
+                                "incident": incident})
 
                 # ④ 结果回填：content 必须是字符串
                 self.messages.append({
@@ -512,6 +529,21 @@ class Harness:
              "score": h["score"]}
             for h in (self.ctx.get("last_hits") or [])
         ]
+
+    def _record_incident(self, *, tool: str, code: str, reason: str, args: dict = None):
+        """把一次停止条件落成转交单（原因 + 接手人 + 时限）。
+
+        刻意吞掉异常：转交单是「附加的治理动作」，
+        它失败了也不能影响主链路把「为什么停下」告诉店长。
+        """
+        try:
+            return incident_rules.record(
+                run_id=self.run_id, session_id=self.session_id, store_id=self.store_id,
+                tool=tool, code=(code or "BLOCKING"), reason=reason or "",
+                sku=(args or {}).get("sku") or "",
+            )
+        except Exception:
+            return None
 
     def _persist(self):
         """把终态写回 agent_runs（messages 快照也一并更新）。"""

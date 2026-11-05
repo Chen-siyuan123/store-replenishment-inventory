@@ -388,6 +388,12 @@ def _resolve_sku(value: str):
         row = conn.execute("SELECT sku FROM skus WHERE sku = ?", (v.upper(),)).fetchone()
         if row:
             return row["sku"]
+        # 旧编码/套装码 → 主编号（数据工程师归并后写入 sku_code_map）
+        # 好处：店长或报表里出现旧码时，不必先纠正就能继续核对
+        mapped = conn.execute("SELECT main_code FROM sku_code_map WHERE alias_code = ?",
+                              (v.upper(),)).fetchone()
+        if mapped:
+            return mapped["main_code"]
         rows = conn.execute(
             "SELECT sku FROM skus WHERE name LIKE ? OR IFNULL(alias,'') LIKE ?",
             (f"%{v}%", f"%{v}%"),
@@ -527,6 +533,12 @@ def get_sellable_inventory(ctx, sku: str, human_confirmed: bool = False):
             blocking=True,
             blocking_reason="账实不一致（系统库存≠可售库存），需店长人工核对后仓与货架（f44 停止条件）",
             needs_manual_confirm=True,
+            code="STOCK_MISMATCH",
+            # 停止不等于结束：给出人工可执行的下一步，避免店长只看到「不能办」
+            manual_path=(f"先盘点后仓 {row['backroom_qty']} 与货架 {row['shelf_qty']}，"
+                         f"与系统 {row['sys_qty']} 核对一致后，在确认卡上点「账实一致」再重新发起，"
+                         "我会按可售库存重新计算"),
+            reference_sellable=int(row["sellable_qty"] or 0),
         )
 
     _mark(ctx["session_id"], sku, "inventory", True)
@@ -575,6 +587,9 @@ def check_promotion_status(ctx, sku: str, confirm_version: str = ""):
             data,
             blocking=True,
             blocking_reason="促销截断：促销样本不足 3 天，历史销量不可作为需求依据（f44 停止条件）",
+            code="PROMO_TRUNCATED",
+            manual_path=("促销前 3 天销量不足以建模，请把这个 SKU 交给补货计划员按促销计划人工给量，"
+                         "或在促销结束后再让我按历史销量计算"),
         )
 
     # 促销版本需人工确认
@@ -587,6 +602,9 @@ def check_promotion_status(ctx, sku: str, confirm_version: str = ""):
             blocking_reason=f"促销版本未确认，需店长确认版本号 {version} 后才可引用销量",
             need_version_confirm=True,
             version=version,
+            code="PROMO_VERSION_UNCONFIRMED",
+            manual_path=(f"核对门店终端上的促销价签版本是否为 {version}，"
+                         "确认后告诉我「版本 {0} 确认」，我再按该版本口径继续".format(version)),
         )
 
     _mark(ctx["session_id"], sku, "promo", True)
@@ -611,27 +629,50 @@ def get_sales_context(ctx, sku: str, days: int = 7):
         ).fetchall()
         sku_row = conn.execute("SELECT name, legacy_code, code_merged FROM skus WHERE sku = ?",
                                (sku,)).fetchone()
+        # 旧码是否已被数据工程师归并到主编号（REQ-1 的最小切片）：
+        # 只要映射表里有这条记录，就不必再阻断——归并工作量因此从「改 SKU 主表」
+        # 降级为「插一行映射」，数据侧可以先跑起来再补历史。
+        mapping = None
+        if sku_row and sku_row["legacy_code"]:
+            mapping = conn.execute(
+                "SELECT main_code, note FROM sku_code_map WHERE alias_code = ?",
+                (sku_row["legacy_code"],)).fetchone()
 
     total = sum(int(r["qty"] or 0) for r in rows)
     avg = round(total / days, 1)
     data = {"days": days, "total": total, "avg_daily": avg,
             "records": len(rows), "since": since}
 
-    # 停止条件③：依据缺失（新旧编码未归并）
+    # 停止条件③：依据缺失（新旧编码未归并，且映射表里也没有）
     if sku_row and sku_row["legacy_code"] and not sku_row["code_merged"]:
-        return _ok("该商品存在未归并的旧编码，销量口径不完整，不能作为需求依据",
-                   data, blocking=True,
-                   blocking_reason="依据缺失：新旧编码未归并，销量口径不可用（f44 停止条件）")
+        if mapping and mapping["main_code"] == sku:
+            # 已归并到主编号：继续走正常口径，并在结果里说明依据来源
+            data["code_merged_via_map"] = True
+            data["legacy_code"] = sku_row["legacy_code"]
+        else:
+            return _ok("该商品存在未归并的旧编码，销量口径不完整，不能作为需求依据",
+                       data, blocking=True,
+                       blocking_reason="依据缺失：新旧编码未归并，销量口径不可用（f44 停止条件）",
+                       code="CODE_NOT_MERGED",
+                       legacy_code=sku_row["legacy_code"],
+                       manual_path=(f"旧编码 {sku_row['legacy_code']} 尚未映射到主编号 {sku}，"
+                                    "需要数据侧在编码映射表补一条记录；归并后本条自动解除，无需重启"))
 
     # 停止条件③：依据缺失（无销量记录 / 零销量）
     if not rows:
         return _ok(f"近 {days} 天无该商品销量记录（新品或未开售），无需求依据",
                    data, blocking=True,
-                   blocking_reason="依据缺失：无历史销量记录，不能推算建议量（f44 停止条件）")
+                   blocking_reason="依据缺失：无历史销量记录，不能推算建议量（f44 停止条件）",
+                   code="NO_SALES_RECORD",
+                   manual_path=("确认是新上架商品还是数据未同步：新品可按同类商品首铺量人工给量，"
+                                "数据问题请联系数据工程师补同步"))
     if total == 0:
         return _ok(f"近 {days} 天销量为 0，属于零销量截断，不能据此判定缺货或补货",
                    data, blocking=True,
-                   blocking_reason="依据缺失：零销量（可能是停售/断货/未上架），不得推算建议量（f44 停止条件）")
+                   blocking_reason="依据缺失：零销量（可能是停售/断货/未上架），不得推算建议量（f44 停止条件）",
+                   code="ZERO_SALES",
+                   manual_path=("零销量既可能是卖不动、也可能是缺货截断（f31）："
+                                "先看货架是否空、是否停售，确认后告诉我原因，我再决定是否按人工经验给量"))
 
     _mark(ctx["session_id"], sku, "sales", True)
     _mark(ctx["session_id"], sku, "avg_daily", avg)
@@ -936,7 +977,10 @@ def suggest_quantity(ctx, sku: str, coverage_days: int = 3):
     if qty <= 0:
         return _ok("按制度参数计算后无可补数量（受分配上限约束）",
                    {"suggested_qty": 0, "avg_daily": avg, "sellable_qty": sellable},
-                   blocking=True, blocking_reason="分配上限内无可补数量")
+                   blocking=True, blocking_reason="分配上限内无可补数量",
+                   code="NO_QTY_WITHIN_CAP",
+                   manual_path=("可售库存已接近上限，本周期无法再补：需要走跨店调拨时由区域经理批准，"
+                                "或等下一个周期额度释放（f22）"))
 
     return _ok(
         f"建议补货量 {qty} {sku_row['unit']}（{boxes} 箱）：日均 {avg} × 覆盖 {coverage} 天 "
@@ -1049,7 +1093,11 @@ def validate_replenishment(ctx, sku: str, qty, delivery_date: str):
         ctx["last_rejected_qty"] = qty
         ctx["last_rejected_violations"] = list(violations)
         return _ok("四项校验未通过：" + "；".join(violations), result,
-                   blocking=True, blocking_reason="校验未通过，禁止创建补货草稿")
+                   blocking=True, blocking_reason="校验未通过，禁止创建补货草稿",
+                   code="VALIDATION_FAILED",
+                   violations=violations,
+                   manual_path=("按提示调整数量或配送日即可重新校验；"
+                                "如果确实需要超出上限，走计划员人工审批，不通过本系统建单（f22）"))
 
     # ---- 全部通过：签发令牌（绑定门店 + SKU + 数量 + 配送日，15 分钟有效）----
     token = uuid.uuid4().hex
@@ -1181,6 +1229,25 @@ def preview_replenishment_draft(ctx, sku: str, qty, delivery_date: str,
                            f"超出分配上限 {cap} {unit}，已按整箱压到 {qty} {unit}"),
             }
 
+    # ---- 未满足数量：店长原要求 − 实际申请，且必须带原因（f52）----
+    # 访谈 f52 原话：「需要给门店看预计到货与本次未满足数量」。
+    # 只给「实际申请 120」而不说「你要 240、少了 120、因为上限」，店长无法向店员解释。
+    shortfall = None
+    desired = adjust["from_qty"] if adjust else None
+    if not desired and ctx.get("requested_qty"):
+        desired, _n = _qty_from_request(ctx["requested_qty"], sku_row)
+    if desired and int(desired) > qty:
+        limit_type = "分配上限" if (cap and int(desired) > cap) else "整箱规格/线路容量"
+        shortfall = {
+            "requested_qty": int(desired),
+            "granted_qty": qty,
+            "unmet_qty": int(desired) - qty,
+            "limit_type": limit_type,
+            "reason": (adjust or {}).get("reason") or f"受{limit_type}约束",
+            "text": f"原要求 {desired} {unit}，实际可申请 {qty} {unit}，"
+                    f"未满足 {int(desired) - qty} {unit}（{limit_type}）",
+        }
+
     data = {
         "action": "create_replenishment_draft",
         "tool": "create_replenishment_draft",
@@ -1211,6 +1278,7 @@ def preview_replenishment_draft(ctx, sku: str, qty, delivery_date: str,
         "checks": checks,
         "all_checks_ok": all(c["ok"] for c in checks),
         "adjust": adjust,
+        "shortfall": shortfall,
     }
 
     # 预览不通过就不该弹确认卡（框架会把它当成一次普通的工具失败回填给模型）
@@ -1309,7 +1377,10 @@ def create_replenishment_draft(ctx, sku: str, qty, delivery_date: str,
                        "end": promo["end_date"], "confirmed": True} if promo else None),
         "delivery": {"date": delivery_date, "line": line["line_name"],
                      "remaining_capacity": int(line["capacity"]) - int(line["used"])},
-        "unsatisfied": max(0, int(qty) - int(line["capacity"]) + int(line["used"])),
+        # 未满足数量在下面按「店长原要求 − 实际申请」补算（f52）：
+        # 旧实现用「申请量 − 线路剩余容量」，而校验通过后这一项恒为 0，
+        # 等于把门店最关心的「少给了多少」永远写成 0。
+        "unsatisfied": 0,
         "reason": "按制度参数与配送日历校验通过后生成的补货建议",
     }
     validation = {
@@ -1336,6 +1407,23 @@ def create_replenishment_draft(ctx, sku: str, qty, delivery_date: str,
                        f"受起订量/整箱/分配上限/线路容量约束，调整为 {qty} {sku_row['unit']}"),
         }
 
+    # ---- 未满足数量与原因（f52）----
+    unmet_qty = max(0, (req_qty or qty) - qty)
+    unit_txt = sku_row["unit"] or "件"
+    shortfall = None
+    if unmet_qty > 0:
+        cap_qty = (int(sku_row["alloc_cap"] or 0) // bs) * bs if bs else 0
+        limit_type = ("分配上限" if (cap_qty and req_qty > cap_qty) else "整箱规格/线路容量")
+        shortfall = {
+            "requested_qty": int(req_qty), "granted_qty": qty,
+            "unmet_qty": unmet_qty, "limit_type": limit_type,
+            "reason": (adjust or {}).get("reason") or f"受{limit_type}约束",
+            "text": f"原要求 {req_qty} {unit_txt}，本次可申请 {qty} {unit_txt}，"
+                    f"未满足 {unmet_qty} {unit_txt}（{limit_type}）",
+        }
+    basis["unsatisfied"] = unmet_qty
+    basis["unsatisfied_reason"] = shortfall["reason"] if shortfall else ""
+
     with db.get_db() as conn:
         cur = conn.execute(
             "INSERT INTO replenishment_drafts (session_id, store_id, sku, sku_name, "
@@ -1361,6 +1449,7 @@ def create_replenishment_draft(ctx, sku: str, qty, delivery_date: str,
                      f"{qty} {sku_row['unit'] or '件'}"),
         "delivery_date": delivery_date, "store_id": ctx["store_id"],
         "status": "draft", "basis": basis, "adjust": adjust,
+        "shortfall": shortfall,
     }
     return _ok(
         f"已创建补货草稿 #{draft_id}：{sku_row['name']} {qty} {sku_row['unit']}，"

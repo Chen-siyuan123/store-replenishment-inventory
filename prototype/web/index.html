@@ -97,6 +97,9 @@
   .tool-trace .trace-line.block .ico { color: #c07417; }
   .tool-trace .trace-line.fail .ico { color: #a32d2d; }
   .tool-trace .trace-line .summary { color: #888780; }
+  /* 停止条件转交：一行说明「谁接手、什么时候前处理」（f44） */
+  .tool-trace .trace-line.transfer { color: #854f0b; font-size: 11.5px; }
+  .tool-trace .trace-line.transfer .ico { color: #c07417; }
   /* ===== 补货草稿确认卡片 ===== */
   .draft-card {
     max-width: 82%; margin-bottom: 16px; background: #fff;
@@ -354,6 +357,15 @@ function onToolEvent(data, bubble) {
     sum.textContent = '· ' + data.summary;
     line.appendChild(sum);
   }
+  // 命中停止条件：附一行「已转交 岗位 姓名，X 前处理」
+  // 这一行来自后端 agent_incidents 表，不是前端拼的文案——可以在管理后台查到同一张单
+  if (data.incident && data.incident.text) {
+    const inc = document.createElement('div');
+    inc.className = 'trace-line transfer';
+    inc.innerHTML = '<span class="ico">→</span><span class="txt"></span>';
+    inc.querySelector('.txt').textContent = data.incident.text;
+    line.after(inc);
+  }
   scrollBottom();
 }
 
@@ -398,6 +410,7 @@ function addDraftCard(d) {
   card.querySelector('.basis').textContent =
     '分配依据：' + (b.reason || '制度校验通过后生成') +
     '；未满足数量 ' + (b.unsatisfied ?? 0) + ' 件' +
+    (b.unsatisfied_reason ? '（' + b.unsatisfied_reason + '）' : '') +
     (b.promotion ? '；促销版本 ' + b.promotion.version + '（已确认）' : '');
 
   card.querySelector('.btn-confirm').onclick = () => submitDraft(d.id, card);
@@ -550,6 +563,7 @@ function addConfirmCard(data) {
     '<div class="row"><span>整箱换算</span><span class="v-box"></span></div>' +
     '<div class="row"><span>预计配送日</span><span class="v-date"></span></div>' +
     '<div class="row"><span>配送线路</span><span class="v-line"></span></div>' +
+    '<div class="row v-short" style="display:none"><span>未满足数量</span><span class="v-short-v"></span></div>' +
     '<div class="checks"></div>' +
     '<div class="adjust" style="display:none"></div>' +
     '<div class="hint">确认后才会写入补货草稿；草稿仍需你点一次「确认提交」才会进入总部审批。</div>' +
@@ -567,6 +581,13 @@ function addConfirmCard(data) {
     (p.delivery_weekday ? '（' + p.delivery_weekday + '）' : '');
   card.querySelector('.v-line').textContent = (p.line_name || '-') + '，余量 ' +
     (p.line_remaining ?? '-') + ' 件';
+  // 未满足数量：只在实际少于店长要求时出现（f52 要求门店能看到「这次少给了多少」）
+  if (p.shortfall && p.shortfall.unmet_qty > 0) {
+    const row = card.querySelector('.v-short');
+    row.style.display = 'flex';
+    row.querySelector('.v-short-v').textContent = p.shortfall.text;
+    row.querySelector('.v-short-v').style.color = '#a32d2d';
+  }
 
   (p.checks || []).forEach(c => {
     const row = document.createElement('div');

@@ -90,6 +90,30 @@ def init_tables():
         );
         CREATE INDEX IF NOT EXISTS idx_actions_run ON agent_actions(run_id);
         CREATE INDEX IF NOT EXISTS idx_actions_pending ON agent_actions(session_id, status);
+
+        -- ④ 停止条件转交单（f44：原因 + 接手人 + 人工确认时间，缺一不可）
+        --    与 agent_steps.blocking 的区别：steps 记录「停了一次」，
+        --    incidents 记录「这一停交给了谁、什么时候前要闭环」。
+        CREATE TABLE IF NOT EXISTS agent_incidents (
+            id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            run_id        TEXT NOT NULL,
+            session_id    TEXT,
+            store_id      TEXT,
+            tool          TEXT,                     -- 触发停止条件的工具
+            code          TEXT,                     -- 错误码（STOCK_MISMATCH 等）
+            reason        TEXT,                     -- 停止原因（blocking_reason 原文）
+            handler_role  TEXT,                     -- 接手岗位（取自访谈报告角色）
+            handler_name  TEXT,                     -- 责任人
+            due_at        TEXT,                     -- 处理时限（ISO）
+            status        TEXT DEFAULT 'pending',   -- pending / handled / expired
+            created_at    TEXT,
+            handled_at    TEXT,                     -- 人工确认时间
+            handled_by    TEXT,
+            note          TEXT
+        );
+        CREATE INDEX IF NOT EXISTS idx_incidents_status ON agent_incidents(status, due_at);
+        CREATE INDEX IF NOT EXISTS idx_incidents_run ON agent_incidents(run_id);
+        CREATE INDEX IF NOT EXISTS idx_incidents_store ON agent_incidents(store_id, status);
         """)
 
 
@@ -322,6 +346,84 @@ def decide_action(action_id: int, status: str, operator: str) -> None:
             "UPDATE agent_actions SET status = ?, decided_at = ?, decided_by = ? WHERE id = ?",
             (status, db.now(), operator, action_id),
         )
+
+
+# ============================================================
+# agent_incidents（停止条件转交单）
+# ============================================================
+
+def create_incident(*, run_id: str, session_id: str, store_id: str, tool: str,
+                    code: str, reason: str, handler_role: str, handler_name: str,
+                    due_at: str) -> dict:
+    """落一条转交单；同一 run + 同一错误码已有 pending 时只更新原因与时限。
+
+    为什么要去重：
+      模型在 5 轮里可能对同一个 SKU 反复撞同一个停止条件，
+      如果每次都插一行，待办列表会被同一个问题刷满，真正需要处理的新问题反而被淹没。
+    """
+    now = db.now()
+    with db.get_db() as conn:
+        row = conn.execute(
+            "SELECT id FROM agent_incidents WHERE run_id = ? AND code = ? "
+            "AND status = 'pending' ORDER BY id DESC LIMIT 1", (run_id, code)).fetchone()
+        if row:
+            conn.execute(
+                "UPDATE agent_incidents SET reason = ?, due_at = ? , created_at = created_at "
+                "WHERE id = ?", (reason, due_at, row["id"]))
+            inc_id = row["id"]
+        else:
+            cur = conn.execute(
+                "INSERT INTO agent_incidents (run_id, session_id, store_id, tool, code, reason, "
+                "handler_role, handler_name, due_at, status, created_at) "
+                "VALUES (?,?,?,?,?,?,?,?,?,?,?)",
+                (run_id, session_id, store_id, tool, code, reason,
+                 handler_role, handler_name, due_at, "pending", now))
+            inc_id = cur.lastrowid
+    return {"id": inc_id, "due_at": due_at}
+
+
+def list_incidents(status: str = None, store_id: str = None, limit: int = 100) -> list:
+    """转交单列表。status='overdue' 时只返回已超时未处理的（看板用）。"""
+    sql = """SELECT i.*, r.question AS question, r.session_id AS run_session
+             FROM agent_incidents i LEFT JOIN agent_runs r ON r.id = i.run_id
+             WHERE 1 = 1"""
+    params = []
+    if status == "overdue":
+        sql += " AND i.status = 'pending' AND i.due_at < ?"
+        params.append(db.now())
+    elif status:
+        sql += " AND i.status = ?"
+        params.append(status)
+    if store_id:
+        sql += " AND i.store_id = ?"
+        params.append(store_id)
+    sql += " ORDER BY (i.status = 'pending') DESC, i.due_at ASC, i.id DESC LIMIT ?"
+    params.append(int(limit))
+    with db.get_db() as conn:
+        rows = conn.execute(sql, params).fetchall()
+    return [dict(r) for r in rows]
+
+
+def incident_counts() -> dict:
+    """看板数字：待处理 / 已超时 / 已闭环。"""
+    now = db.now()
+    with db.get_db() as conn:
+        row = conn.execute(
+            "SELECT SUM(status = 'pending') AS pending, "
+            "SUM(status = 'pending' AND due_at < ?) AS overdue, "
+            "SUM(status = 'handled') AS handled, COUNT(*) AS total "
+            "FROM agent_incidents", (now,)).fetchone()
+    return {k: int(row[k] or 0) for k in ("pending", "overdue", "handled", "total")}
+
+
+def resolve_incident(incident_id: int, operator: str, note: str = "") -> bool:
+    """人工处理完成：必须留下处理人与确认时间（f44 的「人工确认时间」）。"""
+    with db.get_db() as conn:
+        cur = conn.execute(
+            "UPDATE agent_incidents SET status = 'handled', handled_at = ?, handled_by = ?, "
+            "note = ? WHERE id = ? AND status = 'pending'",
+            (db.now(), operator, note, incident_id))
+        return cur.rowcount > 0
 
 
 def expire_pending(run_id: str) -> int:

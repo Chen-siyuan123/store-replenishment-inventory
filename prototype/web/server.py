@@ -50,6 +50,7 @@ import config   # 配置加载 + 自检。必须排在 kbstore 之前：
                 # kbstore 的检索门限是模块级常量，import 时就要读到 .env
 import db       # 数据层（建表/种子/连接）
 import kbstore  # 【核心模块①②】知识库存取 + 混合检索（批次 2 数据库化）
+import retention  # 会话与调用日志留存/归档（f43）
 from agent import harness, store as agent_store   # 执行循环 + 轨迹/确认持久化
 from auth import (create_token, verify_password,
                   get_current_user, require_admin)
@@ -519,8 +520,8 @@ def admin_home():
 # ============================================================
 
 @app.get("/admin/trace", response_class=HTMLResponse)
-def admin_trace_page(request: Request, user: dict = Depends(get_current_user)):
-    """执行轨迹页（页面内 JS 再校验 admin 角色）。"""
+def admin_trace_page(request: Request):
+    """执行轨迹页（页面内 JS 校验管理员角色，数据接口仍 require_admin）。"""
     return templates.TemplateResponse(request, "trace.html")
 
 
@@ -681,8 +682,15 @@ def cancel_draft(draft_id: int, user: dict = Depends(get_current_user)):
 # ============================================================
 
 @app.get("/admin/kb", response_class=HTMLResponse)
-def admin_kb_page(request: Request, user: dict = Depends(get_current_user)):
-    """知识库管理页（页面内 JS 再校验 admin 角色，未授权跳登录页）。"""
+def admin_kb_page(request: Request):
+    """知识库管理页。
+
+    为什么不在这里做接口级鉴权（Depends(get_current_user)）：
+      浏览器直接打开页面时不会带 Authorization 头（token 存在 localStorage），
+      接口级校验会把正常访问判成 401，页面直接变成一段 JSON。
+      因此统一改为「页面先返回、页面内 JS 调 /api/me 校验角色」，
+      数据接口（/api/kb/*）仍然全部 require_admin，越权拿不到任何数据。
+    """
     return templates.TemplateResponse(request, "kb.html")
 
 
@@ -749,8 +757,8 @@ class PromptRequest(BaseModel):
 
 
 @app.get("/admin/prompts", response_class=HTMLResponse)
-def admin_prompts_page(request: Request, user: dict = Depends(get_current_user)):
-    """提示词模板管理页（页面内 JS 再校验 admin 角色）。"""
+def admin_prompts_page(request: Request):
+    """提示词模板管理页（页面内 JS 校验管理员角色，数据接口仍 require_admin）。"""
     return templates.TemplateResponse(request, "prompts.html")
 
 
@@ -805,8 +813,8 @@ def activate_prompt(prompt_id: int, user: dict = Depends(require_admin)):
 # ============================================================
 
 @app.get("/admin/audit", response_class=HTMLResponse)
-def admin_audit_page(request: Request, user: dict = Depends(get_current_user)):
-    """对话审计页（页面内 JS 再校验 admin 角色）。"""
+def admin_audit_page(request: Request):
+    """对话审计页（页面内 JS 校验管理员角色，数据接口仍 require_admin）。"""
     return templates.TemplateResponse(request, "audit.html")
 
 
@@ -880,3 +888,46 @@ def audit_records(
         # 脱敏：审计列表不返回全文，详情前端按需展示（记录里保留全文，量小）
         records.append(rec)
     return {"records": records}
+
+
+# ============================================================
+# 停止条件转交单（f44：原因 + 接手人 + 人工确认时间）
+# ============================================================
+
+@app.get("/api/incidents")
+def incidents_list(status: Optional[str] = "pending", store_id: Optional[str] = None,
+                   limit: int = 100, user: dict = Depends(require_admin)):
+    """转交单列表 + 看板数字（管理员）。status 传 overdue 只看已超时。"""
+    rows = agent_store.list_incidents(status=status, store_id=store_id, limit=limit)
+    return {"incidents": rows, "counts": agent_store.incident_counts()}
+
+
+@app.post("/api/incidents/{incident_id}/resolve")
+def incidents_resolve(incident_id: int, req: dict = None,
+                      user: dict = Depends(require_admin)):
+    """标记已处理：必须留下处理人与确认时间（这就是 f44 要的「人工确认时间」）。"""
+    note = (req or {}).get("note") or ""
+    operator = user.get("sub") or "admin"
+    ok = agent_store.resolve_incident(incident_id, operator, note)
+    if not ok:
+        raise HTTPException(status_code=404, detail="转交单不存在或已处理")
+    return {"ok": True, "handled_by": operator, "counts": agent_store.incident_counts()}
+
+
+# ============================================================
+# 留存与归档（f43：90 天到期由责任人确认删除或归档）
+# ============================================================
+
+@app.get("/api/admin/retention")
+def retention_preview(days: Optional[int] = None, user: dict = Depends(require_admin)):
+    """只预览：到期多少条、分表明细、哪些数据受保护。"""
+    return retention.preview(days)
+
+
+@app.post("/api/admin/retention")
+def retention_execute(req: dict = None, user: dict = Depends(require_admin)):
+    """归档并删除（需 confirm=ARCHIVE，前端二次确认后才会带）。"""
+    body = req or {}
+    return retention.execute(operator=user.get("sub") or "admin",
+                             days=body.get("days"),
+                             confirm=body.get("confirm") or "")

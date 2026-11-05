@@ -224,6 +224,14 @@ def init_db():
             qty       INTEGER,
             PRIMARY KEY (store_id, sku, sale_date)
         );
+        -- 编码映射表：旧码/套装码 → 主编号（数据工程师归并后写入）
+        -- 有映射即可按主编号算销量口径，不必等主表 code_merged 改完
+        CREATE TABLE IF NOT EXISTS sku_code_map (
+            alias_code TEXT PRIMARY KEY,          -- 旧编码 / 套装码
+            main_code  TEXT NOT NULL,             -- 主编号（skus.sku）
+            note       TEXT,
+            created_at TEXT
+        );
         CREATE TABLE IF NOT EXISTS promotions (
             id         INTEGER PRIMARY KEY AUTOINCREMENT,
             sku        TEXT NOT NULL,
@@ -272,6 +280,7 @@ def init_db():
         _patch_aliases(conn)
         _migrate_demo_promo(conn)
         _migrate_prompt_contract(conn)
+        _patch_sku_code_map(conn)
 
     # 智能体执行轨迹表（agent_runs / agent_steps / agent_actions）
     # 放在函数内 import：agent.store 依赖本模块的 get_db，模块级 import 会循环引用
@@ -414,6 +423,26 @@ def _patch_aliases(conn):
             "UPDATE skus SET alias = ? WHERE sku = ? AND (alias IS NULL OR alias = '')",
             (alias, sku),
         )
+
+
+def _patch_sku_code_map(conn):
+    """预置新旧编码映射（REQ-1 的最小切片）。
+
+    为什么要有这张表：
+      访谈 f30 说新旧码与套装码并存，f33 要求「缺关键字段进人工修复队列，不用猜测值补齐」。
+      「改主表 code_merged」要求先做完整个编码治理工程，试点跑不起来；
+      改成「插一行映射」后，数据侧可以边跑边归并，命中映射的商品立刻可以正常算销量。
+      没有映射的商品保持阻断（不猜），并生成一条转交单给数据工程师。
+    """
+    now = datetime.now().isoformat(timespec="seconds")
+    rows = [
+        ("OLD-A002", "A002", "鲜牛奶旧编码，已按主编号 A002 归并（f30）"),
+        ("OLD-A005", "A005", "红烧牛肉面旧编码，已按主编号 A005 归并（f30）"),
+    ]
+    for alias, main, note in rows:
+        conn.execute(
+            "INSERT OR IGNORE INTO sku_code_map (alias_code, main_code, note, created_at) "
+            "VALUES (?,?,?,?)", (alias, main, note, now))
 
 
 def _migrate_demo_promo(conn):

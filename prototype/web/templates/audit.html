@@ -54,6 +54,25 @@
   .empty { color: #b4b2a9; font-size: 13px; text-align: center; padding: 30px 0; }
   .toast { position: fixed; top: 18px; right: 18px; padding: 10px 16px; border-radius: 8px; font-size: 13px; display: none; z-index: 9; }
   .toast.ok { display: block; background: #eaf3de; border: 1px solid #97c459; color: #3b6d11; }
+
+  /* 转交单 / 留存面板 */
+  .card { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 14px 20px; margin-bottom: 16px; }
+  .card-head { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .card-head h2 { font-size: 14px; font-weight: 600; }
+  .card-head .muted { margin-left: auto; }
+  .muted { color: #888780; font-size: 12px; }
+  .tip { font-size: 12px; color: #5f5e5a; line-height: 1.7; margin-bottom: 10px; }
+  .inc { border-top: 1px dashed #eee; padding: 9px 0; display: flex; gap: 12px; align-items: flex-start; font-size: 13px; }
+  .inc:first-child { border-top: none; }
+  .inc .why { flex: 1; }
+  .inc .why .t { color: #2c2c2a; }
+  .inc .why .m { color: #888780; font-size: 12px; margin-top: 3px; }
+  .inc .due { font-size: 12px; white-space: nowrap; }
+  .inc .due.ok { color: #0f6e56; }
+  .inc .due.bad { color: #a32d2d; }
+  .btn-sm { padding: 5px 12px; border: 1px solid #d3d1c7; background: #fff; color: #444441; border-radius: 8px; font-size: 12px; cursor: pointer; }
+  .btn-sm:hover { border-color: #0f6e56; color: #0f6e56; }
+  .btn-sm.danger { background: #a32d2d; border-color: #a32d2d; color: #fff; }
 </style>
 </head>
 <body>
@@ -73,6 +92,31 @@
     <p>全部门店问答记录；系统自动标记疑似异常（越权要求 / 模糊回答 / 低质量检索），标记仅供人工复核排序</p>
   </div>
   <div class="content">
+
+    <!-- 停止条件转交单（f44：原因 + 接手人 + 处理时限） -->
+    <div class="card">
+      <div class="card-head">
+        <h2>待处理转交 · 停止条件</h2>
+        <span class="muted" id="incStat"></span>
+        <button class="btn-sm" id="btnIncRefresh">刷新</button>
+      </div>
+      <p class="tip">命中停止条件（账实不一致 / 促销截断 / 编码未归并 / 零销量 / 依据缺失）时，系统会自动生成一张转交单：写明原因、接手岗位与处理时限。处理后点「已处理」，系统会记录处理人与人工确认时间。</p>
+      <div id="incList"><p class="empty">加载中…</p></div>
+    </div>
+
+    <!-- 留存与归档（f43） -->
+    <div class="card">
+      <div class="card-head">
+        <h2>会话日志留存与归档</h2>
+        <span class="muted" id="retStat"></span>
+      </div>
+      <p class="tip">会话与调用日志默认留存 90 天（环境变量 RETENTION_DAYS 可调）。到期记录先归档为 archive/*.jsonl，再删除；补货申请单与未处理转交单不在清理范围。</p>
+      <div id="retList" class="muted">尚未预览</div>
+      <div style="margin-top:10px;display:flex;gap:8px">
+        <button class="btn-sm" id="btnRetPreview">预览到期数据</button>
+        <button class="btn-sm danger" id="btnRetArchive">归档并删除</button>
+      </div>
+    </div>
 
     <!-- 筛选栏 -->
     <div class="filter-card">
@@ -234,8 +278,95 @@ function toggleDetail(div, r) {
   div.classList.add('open');
 }
 
+/* ============ 停止条件转交单 ============ */
+async function loadIncidents() {
+  const list = document.getElementById('incList');
+  try {
+    const resp = await apiFetch('/api/incidents?status=pending');
+    const data = await resp.json();
+    const c = data.counts || {};
+    document.getElementById('incStat').textContent =
+      '待处理 ' + (c.pending || 0) + ' · 已超时 ' + (c.overdue || 0) + ' · 已闭环 ' + (c.handled || 0);
+    if (!data.incidents.length) {
+      list.innerHTML = '<p class="empty">当前没有待处理的转交单</p>';
+      return;
+    }
+    list.innerHTML = '';
+    const nowStr = new Date().toISOString().slice(0, 16);
+    data.incidents.forEach(it => {
+      const row = document.createElement('div');
+      row.className = 'inc';
+      const why = document.createElement('div');
+      why.className = 'why';
+      const t = document.createElement('div');
+      t.className = 't';
+      t.textContent = (it.code || 'BLOCKING') + '：' + (it.reason || '');
+      const m = document.createElement('div');
+      m.className = 'm';
+      m.textContent = '接手：' + (it.handler_role || '-') + ' ' + (it.handler_name || '-') +
+        ' · 门店 ' + (it.store_id || '-') + ' · 触发工具 ' + (it.tool || '-') +
+        ' · 触发时间 ' + String(it.created_at || '').replace('T', ' ');
+      why.appendChild(t); why.appendChild(m);
+
+      const overdue = it.due_at && String(it.due_at) < nowStr;
+      const due = document.createElement('div');
+      due.className = 'due ' + (overdue ? 'bad' : 'ok');
+      due.textContent = (overdue ? '已超时 ' : '时限 ') + String(it.due_at || '-').replace('T', ' ');
+
+      const btn = document.createElement('button');
+      btn.className = 'btn-sm';
+      btn.textContent = '已处理';
+      btn.onclick = () => resolveIncident(it.id);
+
+      row.appendChild(why); row.appendChild(due); row.appendChild(btn);
+      list.appendChild(row);
+    });
+  } catch (e) {
+    list.innerHTML = '<p class="empty">加载失败</p>';
+  }
+}
+
+async function resolveIncident(id) {
+  const note = prompt('处理说明（写清做了什么处理，可留空）：') || '';
+  const resp = await apiFetch('/api/incidents/' + id + '/resolve', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ note })
+  });
+  if (resp.ok) { toast('已标记处理，处理人与时间已记录'); loadIncidents(); }
+  else { toast('操作失败'); }
+}
+
+/* ============ 留存与归档 ============ */
+async function previewRetention() {
+  const resp = await apiFetch('/api/admin/retention');
+  const d = await resp.json();
+  document.getElementById('retStat').textContent = '留存 ' + d.days + ' 天 · 分界日 ' + d.cutoff;
+  const parts = Object.keys(d.counts).map(k => k + ' ' + d.counts[k]);
+  document.getElementById('retList').textContent =
+    '到期共 ' + d.total + ' 条：' + parts.join(' · ') + '（补货申请单不在此范围）';
+  return d;
+}
+
+async function archiveRetention() {
+  const d = await previewRetention();
+  if (!d.total) { toast('没有到期数据，无需归档'); return; }
+  if (!confirm('将归档并删除早于 ' + d.cutoff + ' 的 ' + d.total + ' 条记录，确认执行？')) return;
+  const resp = await apiFetch('/api/admin/retention', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ confirm: 'ARCHIVE' })
+  });
+  const r = await resp.json();
+  toast(r.message || (r.ok ? '已完成' : '执行失败'));
+  previewRetention();
+}
+
 document.getElementById('btnFilter').onclick = loadAudit;
-initAuth().then(() => { loadMeta(); loadAudit(); });
+document.getElementById('btnIncRefresh').onclick = loadIncidents;
+document.getElementById('btnRetPreview').onclick = previewRetention;
+document.getElementById('btnRetArchive').onclick = archiveRetention;
+initAuth().then(() => { loadMeta(); loadAudit(); loadIncidents(); previewRetention(); });
 </script>
 </body>
 </html>
