@@ -29,7 +29,7 @@
 ├── docs/                     # 项目文档（索引见 docs/README.md）
 │   ├── requirements/         # 需求发现报告、行业分析报告、一页纸需求清单
 │   ├── design/               # 技术架构设计、现状流程图、数智化流程图
-│   └── delivery/             # 上线前检查清单、试点报价单、验证与测试报告、项目演讲稿
+│   └── delivery/             # 上线前检查清单、试点报价单、验证与测试报告
 ├── tests/
 │   └── test_framework_basics.py  # 框架层单元测试：数量抽取防线、工具风险分区一致性
 ├── eval/
