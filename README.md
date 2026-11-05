@@ -1,6 +1,10 @@
 # 门店补货与库存协同智能体
 
 [![CI](https://github.com/Chen-siyuan123/store-replenishment-inventory/actions/workflows/ci.yml/badge.svg)](https://github.com/Chen-siyuan123/store-replenishment-inventory/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](prototype/web/requirements.txt)
+[![Tests](https://img.shields.io/badge/tests-13%20passed-brightgreen)](tests/test_framework_basics.py)
+[![Eval](https://img.shields.io/badge/eval-30%20cases-1f6feb)](eval/cases_v1.json)
+[![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
 面向社区连锁超市试点门店（8 家）的补货助手：店长用自然语言提问，智能体基于门店库存、销量、补货制度与配送日历给出有依据的建议，最终产物是**补货申请草稿**——先出草稿、店长人工确认、再提交，模型没有任何直接写库权限。
 
@@ -48,6 +52,20 @@
 - **轨迹可审计**：每轮决策、每次工具调用（参数/耗时/结果摘要）、每次中断确认均落库，管理后台 `/admin/trace` 可查。
 - **日志可回收**：`retention.py` 按保留期（默认 90 天）先导出 `archive/*.jsonl` 再删除；补货申请单与未处理转交单不清理。
 
+## 流程与设计
+
+现状流程（四泳道：店长 / 计划员 / 仓库 / 财务，9 个痛点红框，可编辑版见
+[`docs/design/门店补货与库存协同-现状流程图.html`](docs/design/门店补货与库存协同-现状流程图.html)）：
+
+<img src="docs/design/门店补货与库存协同-现状流程图.png" width="620" alt="现状流程图">
+
+数智化流程（含判断框与实现状态标注：● 已实现 / ◐ 部分实现 / ○ 试点后规划，可编辑版见
+[`docs/design/门店补货与库存协同-数智化流程图-局部.html`](docs/design/门店补货与库存协同-数智化流程图-局部.html)）：
+
+<img src="docs/design/门店补货与库存协同-数智化流程图-局部.png" width="620" alt="数智化流程图">
+
+系统分层与模块边界见 [`docs/design/门店补货与库存协同智能体系统-技术架构设计.docx`](docs/design/门店补货与库存协同智能体系统-技术架构设计.docx)。
+
 ## 需求可追溯
 
 需求来自 [`docs/requirements/拾光连锁-业务需求发现报告.md`](docs/requirements/拾光连锁-业务需求发现报告.md)（36 项事实采集、6 条需求假设 REQ-1~REQ-6）。代码注释与文档中出现的 `f44`、`f52` 等编号即该报告的事实条目，可逐条回溯到原文。
@@ -83,3 +101,9 @@ python eval/run_eval.py        # L2 离线评测：30 条用例资产盘点 + �
 原型阶段：功能链路已通（4 轮完成建单、中断确认恢复、离线轨迹回归全过）。上线前检查清单见 [`docs/delivery/门店补货与库存协同-上线前检查清单.html`](docs/delivery/门店补货与库存协同-上线前检查清单.html)——其中 7 项阻塞项（限流、令牌持久化、降级开关、知识库软删等）未完成前不建议开放试点。
 
 管理后台（需 admin 登录）：`/admin` 导航页 → `/admin/kb` 知识库 / `/admin/prompts` 提示词 / `/admin/trace` 执行轨迹 / `/admin/audit` 审计与转交待办。
+
+## 文档与版本
+
+- 文档总索引（按需求 / 设计 / 交付三段归档，含 REQ → 代码追溯表）：[`docs/README.md`](docs/README.md)
+- 版本变更记录：[`CHANGELOG.md`](CHANGELOG.md)
+- 许可证：[MIT](LICENSE)
