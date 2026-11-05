@@ -18,6 +18,9 @@
 - **验证文档** `docs/delivery/验证与测试报告.md`：四层验证体系（单元测试 / 离线评测 /
   端到端用例 / 上线检查），并显式列出**未覆盖的边界**（端到端回答质量待试点人工评审、
   7 项上线阻塞未清、行级安全未上库）。
+- **运行实录与导出脚本**：`scripts/export_run_trace.py` 把 `chat.db` 轨迹三表导出成 Markdown，
+  `docs/delivery/运行实录-20箱牛奶案例.md` 为一次真实 5 轮执行的原样记录
+  （20 箱被校验拦截 → 压到 10 箱 → 建草稿 → 店长确认）。
 - **工程规范文件**：`LICENSE`（MIT）、`.editorconfig`、`.gitattributes`、`pyproject.toml`
   （pytest 与 ruff 口径，ruff 暂不作为门禁）。
 
