@@ -1,0 +1,10 @@
+# 开发依赖（仅本地开发/检查用，运行服务不需要）
+#
+#   pip install -r requirements-dev.txt
+#
+# CI 只安装 pytest（见 .github/workflows/ci.yml），确保无第三方 lint 工具也能跑通门禁。
+
+pytest>=8.0            # 单元测试框架（CI 必装）
+pytest-cov>=5.0        # 覆盖率报告：python -m pytest --cov=prototype/web（当前不设阈值门禁）
+ruff>=0.6              # 静态检查：python -m ruff check .（口径见 pyproject.toml，仅确定性错误规则）
+mypy>=1.10             # 可选类型检查：python -m mypy prototype/web（当前不设门禁，用于自查）
