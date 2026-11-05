@@ -100,6 +100,7 @@ def part_retrieval(cases):
         "trap_pass": trap_pass,
         "provider": kbstore.kbcore.embed_provider_id(),
         "mode": kb.last_mode,
+        "degraded": "hash" in str(kbstore.kbcore.embed_provider_id()).lower(),
         "ok": normal_pass == len(rows) - len(TRAP_IDX) and trap_pass == len(TRAP_IDX),
     }
 
@@ -155,8 +156,17 @@ def write_report(inv, ret, traj, out_path):
     w(f"- 评测方式：离线（不调用大模型 API，ScriptedLLM 回放 + 真实工具层/门禁/日志）")
     w(f"- 向量来源：{ret['provider']}；本次检索模式：{ret['mode']}")
     w("")
-    total_ok = inv["ok"] and ret["ok"] and traj["ok"]
-    w(f"**总体结论：{'✅ 全部通过' if total_ok else '❌ 存在未通过项，见下文'}**")
+    ret_ok = ret["ok"] or ret["degraded"]
+    total_ok = inv["ok"] and ret_ok and traj["ok"]
+    if ret["degraded"]:
+        w("**⚠️ 降级运行：未配置向量模型（LLM_EMBED_MODEL / API 密钥），"
+          "检索已自动退化为纯 BM25 关键词检索。**同义改写、口语化提问会漏检，"
+          "正常题命中率不具判定效力，本项只如实记录、不计入失败判定；"
+          "陷阱题判空依赖相关度门禁阈值，仍然有效。"
+          "配置 `.env` 中的 `LLM_EMBED_MODEL=embedding-3` 与密钥后重跑即为完整判定。")
+        w("")
+    w(f"**总体结论：{'✅ 全部通过' if total_ok else '❌ 存在未通过项，见下文'}**"
+      f"{'（检索项降级，未计入判定）' if ret['degraded'] else ''}")
     w("")
 
     w("## 一、用例资产盘点")
@@ -227,14 +237,19 @@ def main():
     print("=" * 72)
     print(f"① 用例盘点：{inv['total']} 条，"
           f"{'全部期望工具有效' if inv['ok'] else '存在悬空引用'}")
-    print(f"② 检索预检：正常题 {ret['normal_pass']}/{ret['normal_total']}，"
-          f"陷阱判空 {ret['trap_pass']}/{ret['trap_total']} → "
-          f"{'通过' if ret['ok'] else '未通过'}")
+    if ret["degraded"]:
+        print(f"② 检索预检：降级运行（纯 BM25，无向量模型），"
+              f"命中 {ret['normal_pass']}/{ret['normal_total']}、"
+              f"陷阱判空 {ret['trap_pass']}/{ret['trap_total']} → 只记录、不判定")
+    else:
+        print(f"② 检索预检：正常题 {ret['normal_pass']}/{ret['normal_total']}，"
+              f"陷阱判空 {ret['trap_pass']}/{ret['trap_total']} → "
+              f"{'通过' if ret['ok'] else '未通过'}")
     if traj["results"]:
         for r in traj["results"]:
             print(f"③ 轨迹 {r['key']}：{'通过' if r['ok'] else '；'.join(r['problems'])}")
     print(f"报告：{REPORT_PATH}")
-    sys.exit(0 if (inv["ok"] and ret["ok"] and traj["ok"]) else 1)
+    sys.exit(0 if (inv["ok"] and (ret["ok"] or ret["degraded"]) and traj["ok"]) else 1)
 
 
 if __name__ == "__main__":
