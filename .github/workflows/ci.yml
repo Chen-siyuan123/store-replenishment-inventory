@@ -1,0 +1,45 @@
+name: CI
+
+# 每次推送 / PR 自动跑两层离线校验：
+#   1. tests/        —— 框架层纯函数与工具风险分区的单元测试
+#   2. eval/run_eval —— 用例资产盘点 + 制度检索预检 + 三条离线轨迹回归
+# 全部离线、不调用任何大模型 API，所以无密钥也能在 CI 上复现。
+# 报告产物 eval/eval_report.md 作为 artifact 保留 30 天。
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  offline-checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: prototype/web/requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+          pip install -r prototype/web/requirements.txt
+
+      - name: Unit tests (framework-level gates)
+        run: python -m pytest tests/ -v
+
+      - name: Offline evaluation (retrieval gates + 3 scripted trajectories)
+        run: python eval/run_eval.py
+
+      - name: Upload eval report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: eval-report
+          path: eval/eval_report.md
+          retention-days: 30
