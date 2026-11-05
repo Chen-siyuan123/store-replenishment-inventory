@@ -111,5 +111,6 @@ python scripts/export_run_trace.py   # 列出最近运行；加 --run-id 可导�
 ## 文档与版本
 
 - 文档总索引（按需求 / 设计 / 交付三段归档，含 REQ → 代码追溯表）：[`docs/README.md`](docs/README.md)
+- 开发与协作规范（提交格式、代码风格、新增工具的固定四步、安全基线）：[`CONTRIBUTING.md`](CONTRIBUTING.md)
 - 版本变更记录：[`CHANGELOG.md`](CHANGELOG.md)
 - 许可证：[MIT](LICENSE)

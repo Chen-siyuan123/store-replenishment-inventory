@@ -23,6 +23,9 @@
   （20 箱被校验拦截 → 压到 10 箱 → 建草稿 → 店长确认）。
 - **工程规范文件**：`LICENSE`（MIT）、`.editorconfig`、`.gitattributes`、`pyproject.toml`
   （pytest 与 ruff 口径，ruff 暂不作为门禁）。
+- **协作规范**：`CONTRIBUTING.md`（提交格式、代码风格、新增业务工具的固定四步、安全基线、
+  文档同步清单）、`requirements-dev.txt`、PR / 缺陷报告模板；`pyproject.toml` 补 `[project]`
+  元数据，版本号与 git tag `v0.3.0` 对齐。
 
 ### 修复
 

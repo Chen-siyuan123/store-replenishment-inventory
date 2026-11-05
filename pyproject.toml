@@ -4,6 +4,15 @@
 #      单元测试 + 离线评测；本文件给出统一的行宽/规则口径，便于本地对齐。
 # ============================================================
 
+[project]
+name = "store-replenishment-agent"
+version = "0.3.0"
+description = "门店补货与库存协同智能体：自然语言补货助手，先出草稿、人工确认、再提交"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "陈思媛" }]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 # 测试需要 import prototype/web 下的模块，避免每个测试文件都手写 sys.path
