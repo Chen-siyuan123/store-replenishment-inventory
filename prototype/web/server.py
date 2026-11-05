@@ -41,7 +41,7 @@ import re
 import uuid
 
 from fastapi import FastAPI, Depends, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from typing import Optional
@@ -423,6 +423,72 @@ def agent_confirm(req: ConfirmRequest, user: dict = Depends(get_current_user)):
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+# ============================================================
+# 管理后台入口（管理员）
+# ============================================================
+
+ADMIN_HOME_HTML = """<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>管理后台 · 门店补货与库存协同</title>
+<style>
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"Microsoft YaHei","PingFang SC",sans-serif; background:#f4f6f9;
+         min-height:100vh; display:flex; align-items:center; justify-content:center; }
+  .wrap { width:640px; max-width:92vw; }
+  h1 { font-size:18px; color:#0f6e56; margin-bottom:6px; }
+  .sub { font-size:13px; color:#7b837d; margin-bottom:22px; }
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  a.card { display:block; background:#fff; border:1px solid #e5e5e5; border-radius:10px;
+           padding:18px 20px; text-decoration:none; color:#2c2c2a; transition:.15s; }
+  a.card:hover { border-color:#0f6e56; box-shadow:0 6px 18px -10px rgba(15,110,86,.35);
+                 transform:translateY(-2px); }
+  .card b { font-size:15px; display:block; margin-bottom:6px; }
+  .card span { font-size:12.5px; color:#7b837d; line-height:1.6; display:block; }
+  .back { display:inline-block; margin-top:20px; font-size:13px; color:#0f6e56;
+          text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>管理后台</h1>
+  <p class="sub">当前身份：{{user_name}}（{{role_label}}） · 管理页均要求管理员角色，店长访问会被跳回登录页</p>
+  <div class="grid">
+    <a class="card" href="/admin/kb">
+      <b>知识库管理</b>
+      <span>补货制度 / 配送日历 / 促销规则的上传、切片入库与删除重建索引</span>
+    </a>
+    <a class="card" href="/admin/prompts">
+      <b>提示词模板</b>
+      <span>问答与收尾模板的多版本管理，单版本激活，可随时切回上一版</span>
+    </a>
+    <a class="card" href="/admin/trace">
+      <b>执行轨迹分析</b>
+      <span>每次运行的轮数 / 工具调用 / 阻断情况 / 质量评分（R1~R3 审计标记）</span>
+    </a>
+    <a class="card" href="/admin/audit">
+      <b>审计与异常</b>
+      <span>R1 未引用 / R2 虚构引用 / R3 数量不一致的自动审计结果</span>
+    </a>
+  </div>
+  <a class="back" href="/">← 返回店长问答页</a>
+</div>
+</body>
+</html>"""
+
+
+@app.get("/admin", response_class=HTMLResponse)
+def admin_home(user: dict = Depends(get_current_user)):
+    """管理后台导航页：四个子入口 + 身份展示（页面数据服务端注入）。"""
+    if user.get("role") != "admin":
+        return RedirectResponse(url="/login", status_code=302)
+    html = ADMIN_HOME_HTML.replace("{{user_name}}", user.get("sub") or "")
+    html = html.replace("{{role_label}}", "总部管理员" if user.get("role") == "admin" else "店长")
+    return HTMLResponse(content=html)
 
 
 # ============================================================
