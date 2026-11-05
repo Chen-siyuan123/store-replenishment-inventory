@@ -1,0 +1,21 @@
+# 统一换行符与二进制识别，避免 Windows / macOS 协作时整文件 diff
+* text=auto eol=lf
+
+# Windows 批处理必须保持 CRLF，否则 cmd 解析异常
+*.bat text eol=crlf
+*.cmd text eol=crlf
+
+# 二进制产物：不做换行转换、不做文本 diff
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.docx binary
+*.xlsx binary
+*.pptx binary
+*.pdf binary
+*.db binary
+
+# 文档类文本差异用 word-diff 更可读（仅提示，不影响行为）
+*.md diff=markdown

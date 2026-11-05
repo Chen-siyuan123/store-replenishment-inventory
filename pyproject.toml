@@ -1,0 +1,33 @@
+# ============================================================
+# 工具与工程规范配置（仅工具配置，不作打包发布）
+# 说明：仓库当前未强制 lint 门禁，CI 只做语法检查（python -m compileall）+
+#      单元测试 + 离线评测；本文件给出统一的行宽/规则口径，便于本地对齐。
+# ============================================================
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# 测试需要 import prototype/web 下的模块，避免每个测试文件都手写 sys.path
+pythonpath = ["prototype/web"]
+addopts = "-q"
+filterwarnings = [
+    "ignore::DeprecationWarning",
+]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 110
+exclude = [
+    ".git",
+    ".workbuddy",
+    "output",
+    "prototype/stage1",
+    "prototype/web/archive",
+]
+
+[tool.ruff.lint]
+# 只启用“确定性错误”类规则：语法级错误、未定义名、重复定义。
+# 风格类规则（import 排序、行宽）暂不纳入门禁，避免为了过 lint 大面积改历史代码。
+select = ["E9", "F63", "F7", "F82"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["F401"]
