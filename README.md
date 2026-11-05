@@ -1,5 +1,7 @@
 # 门店补货与库存协同智能体
 
+[![CI](https://github.com/Chen-siyuan123/store-replenishment-inventory/actions/workflows/ci.yml/badge.svg)](https://github.com/Chen-siyuan123/store-replenishment-inventory/actions/workflows/ci.yml)
+
 面向社区连锁超市试点门店（8 家）的补货助手：店长用自然语言提问，智能体基于门店库存、销量、补货制度与配送日历给出有依据的建议，最终产物是**补货申请草稿**——先出草稿、店长人工确认、再提交，模型没有任何直接写库权限。
 
 ## 项目结构
@@ -27,10 +29,14 @@
 ├── docs/                     # 项目文档（索引见 docs/README.md）
 │   ├── requirements/         # 需求发现报告、行业分析报告、一页纸需求清单
 │   ├── design/               # 技术架构设计、现状流程图、数智化流程图
-│   └── delivery/             # 上线前检查清单、试点报价单
+│   └── delivery/             # 上线前检查清单、试点报价单、验证与测试报告、项目演讲稿
+├── tests/
+│   └── test_framework_basics.py  # 框架层单元测试：数量抽取防线、工具风险分区一致性
 ├── eval/
 │   ├── cases_v1.json         # 30 条评测用例（制度 10 / 工具链 10 / 绕约束 5 / 多轮 5）
-│   └── probe_retrieval.py    # 制度类检索预检（阈值回归）
+│   ├── run_eval.py           # 离线评测一键入口：资产盘点 + 检索预检 + 三条轨迹回归 → eval_report.md
+│   ├── probe_retrieval.py    # 制度类检索预检（阈值回归）
+│   └── eval_report.md        # 最近一次离线评测报告（自动生成）
 └── output/                   # 文档流水线产物（不入仓库，本地生成）
 ```
 
@@ -60,6 +66,17 @@ run_local.bat
 首次使用需复制 `.env.example` 为 `.env` 并填写 `LLM_API_KEY`（智谱开放平台）。**`.env` 已被 gitignore，任何密钥不进仓库。**
 
 默认账号：管理员 `admin / admin@123`，店长 `store01 / store@123`。
+
+## 验证与测试
+
+所有离线验证不调用大模型 API，clone 后即可复现（详见 [`docs/delivery/验证与测试报告.md`](docs/delivery/验证与测试报告.md)）：
+
+```bash
+python -m pytest tests/ -v     # L1 框架层单元测试（数量抽取防线、写操作唯一性）
+python eval/run_eval.py        # L2 离线评测：30 条用例资产盘点 + 检索门禁（7/7 命中、3/3 陷阱判空）+ 三条轨迹回归
+```
+
+每次 push / PR 由 GitHub Actions 自动跑上述两层检查，评测报告作为 artifact 保留。
 
 ## 状态
 
