@@ -72,6 +72,10 @@ def part_inventory(cases):
 # ------------------------------------------------------------
 def part_retrieval(cases):
     kb = kbstore.KBStore()
+    if kb.is_empty():
+        # fresh 环境（如 CI）：数据库还没有知识库，先导入种子制度文档
+        if not kb.seed_default():
+            raise RuntimeError("知识库为空且种子文档导入失败：找不到 prototype/data/补货制度.md")
     kb.rebuild()
     idx_cases = [(i, c) for i, c in enumerate(cases) if c["category"] == "制度类"]
     # 与 probe_retrieval 口径一致：陷阱题按制度类子序列下标
