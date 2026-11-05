@@ -1,5 +1,5 @@
-# 统一换行符与二进制识别，避免 Windows / macOS 协作时整文件 diff
-* text=auto eol=lf
+# 统一二进制识别与批处理换行，避免 Windows / macOS 协作时误把二进制当文本 diff
+# 说明：不写 `* text=auto`，避免在 Windows 工作区触发全仓库换行归一与 CRLF 警告
 
 # Windows 批处理必须保持 CRLF，否则 cmd 解析异常
 *.bat text eol=crlf
