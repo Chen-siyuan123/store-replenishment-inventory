@@ -490,14 +490,16 @@ ADMIN_HOME_HTML = """<!DOCTYPE html>
     try {
       const res = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } });
       if (!res.ok) throw new Error('unauthorized');
-      me = await res.json();
+      const data = await res.json();
+      // /api/me 返回 { user: {...} }（与问答页 initAuth 的取法一致），兼容直接返回的旧格式
+      me = data.user || data;
     } catch (e) {
       localStorage.removeItem('token'); localStorage.removeItem('me');
       location.href = '/login'; return;
     }
     if (me.role !== 'admin') { location.href = '/'; return; }
     document.getElementById('who').textContent =
-      '当前身份：' + me.username + '（总部管理员） · 各管理页均要求管理员角色';
+      '当前身份：' + (me.sub || me.username) + '（总部管理员） · 各管理页均要求管理员角色';
     document.getElementById('tip').style.display = 'none';
     document.getElementById('main').style.display = 'block';
   })();
