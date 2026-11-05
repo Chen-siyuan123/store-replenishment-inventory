@@ -439,7 +439,7 @@ ADMIN_HOME_HTML = """<!DOCTYPE html>
   * { margin:0; padding:0; box-sizing:border-box; }
   body { font-family:"Microsoft YaHei","PingFang SC",sans-serif; background:#f4f6f9;
          min-height:100vh; display:flex; align-items:center; justify-content:center; }
-  .wrap { width:640px; max-width:92vw; }
+  .wrap { width:640px; max-width:92vw; display:none; }
   h1 { font-size:18px; color:#0f6e56; margin-bottom:6px; }
   .sub { font-size:13px; color:#7b837d; margin-bottom:22px; }
   .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
@@ -451,12 +451,15 @@ ADMIN_HOME_HTML = """<!DOCTYPE html>
   .card span { font-size:12.5px; color:#7b837d; line-height:1.6; display:block; }
   .back { display:inline-block; margin-top:20px; font-size:13px; color:#0f6e56;
           text-decoration:none; }
+  /* 页面加载中与鉴权失败的提示 */
+  #tip { font-size:14px; color:#7b837d; }
 </style>
 </head>
 <body>
-<div class="wrap">
+<div id="tip">正在校验登录状态…</div>
+<div class="wrap" id="main">
   <h1>管理后台</h1>
-  <p class="sub">当前身份：{{user_name}}（{{role_label}}） · 管理页均要求管理员角色，店长访问会被跳回登录页</p>
+  <p class="sub" id="who"></p>
   <div class="grid">
     <a class="card" href="/admin/kb">
       <b>知识库管理</b>
@@ -477,18 +480,36 @@ ADMIN_HOME_HTML = """<!DOCTYPE html>
   </div>
   <a class="back" href="/">← 返回店长问答页</a>
 </div>
+<script>
+  // 与其他管理页一致的鉴权方式：页面先渲染，JS 用 localStorage 的 token 调
+  // /api/me 校验身份，非管理员或未登录一律退回登录页。
+  (async function () {
+    const token = localStorage.getItem('token');
+    if (!token) { location.href = '/login'; return; }
+    let me = null;
+    try {
+      const res = await fetch('/api/me', { headers: { Authorization: 'Bearer ' + token } });
+      if (!res.ok) throw new Error('unauthorized');
+      me = await res.json();
+    } catch (e) {
+      localStorage.removeItem('token'); localStorage.removeItem('me');
+      location.href = '/login'; return;
+    }
+    if (me.role !== 'admin') { location.href = '/'; return; }
+    document.getElementById('who').textContent =
+      '当前身份：' + me.username + '（总部管理员） · 各管理页均要求管理员角色';
+    document.getElementById('tip').style.display = 'none';
+    document.getElementById('main').style.display = 'block';
+  })();
+</script>
 </body>
 </html>"""
 
 
 @app.get("/admin", response_class=HTMLResponse)
-def admin_home(user: dict = Depends(get_current_user)):
-    """管理后台导航页：四个子入口 + 身份展示（页面数据服务端注入）。"""
-    if user.get("role") != "admin":
-        return RedirectResponse(url="/login", status_code=302)
-    html = ADMIN_HOME_HTML.replace("{{user_name}}", user.get("sub") or "")
-    html = html.replace("{{role_label}}", "总部管理员" if user.get("role") == "admin" else "店长")
-    return HTMLResponse(content=html)
+def admin_home():
+    """管理后台导航页：与 templates 管理页同款鉴权模式（先渲染，页面内 JS 校验）。"""
+    return HTMLResponse(content=ADMIN_HOME_HTML)
 
 
 # ============================================================
