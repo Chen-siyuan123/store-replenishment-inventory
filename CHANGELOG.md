@@ -21,6 +21,9 @@
 - **运行实录与导出脚本**：`scripts/export_run_trace.py` 把 `chat.db` 轨迹三表导出成 Markdown，
   `docs/delivery/运行实录-20箱牛奶案例.md` 为一次真实 5 轮执行的原样记录
   （20 箱被校验拦截 → 压到 10 箱 → 建草稿 → 店长确认）。
+- **性能基线与覆盖矩阵**：`scripts/latency_stats.py` 统计 235 次工具调用的 p50/p95/max
+  （5 / 14 / 58 ms），`docs/delivery/性能基线.md` 记录并说明三段延迟与局限；
+  验证报告新增「30 条用例覆盖矩阵」，明确哪些可离线判定、哪些必须人评。
 - **工程规范文件**：`LICENSE`（MIT）、`.editorconfig`、`.gitattributes`、`pyproject.toml`
   （pytest 与 ruff 口径，ruff 暂不作为门禁）。
 - **协作规范**：`CONTRIBUTING.md`（提交格式、代码风格、新增业务工具的固定四步、安全基线、
