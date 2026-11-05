@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>门店补货与库存协同系统 · 一页纸需求清单</title>
+<style>
+  :root {
+    --ink: #1a2332;
+    --sub: #5a6472;
+    --line: #e2e6ec;
+    --accent: #1a5fb4;
+    --accent-bg: #eef4fc;
+    --warn-bg: #fdf6ec;
+    --warn-line: #e8c47a;
+    --ok-bg: #eef8f0;
+    --ok-line: #8fc9a0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    color: var(--ink);
+    background: #f0f2f5;
+    padding: 24px 12px;
+    font-size: 12.5px;
+    line-height: 1.55;
+  }
+  .page {
+    max-width: 860px;
+    margin: 0 auto;
+    background: #fff;
+    padding: 36px 44px;
+    box-shadow: 0 2px 12px rgba(0,0,0,.08);
+  }
+  header { border-bottom: 3px solid var(--ink); padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-end; }
+  h1 { font-size: 21px; letter-spacing: 1px; }
+  .meta { text-align: right; color: var(--sub); font-size: 11px; line-height: 1.7; }
+  h2 { font-size: 13.5px; margin: 14px 0 7px; padding-left: 9px; border-left: 4px solid var(--accent); }
+  p, li { color: var(--ink); }
+  .positioning {
+    background: var(--accent-bg); border: 1px solid #c8dcf5; border-radius: 6px;
+    padding: 9px 13px; margin-bottom: 4px;
+  }
+  .positioning b { color: var(--accent); }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0; }
+  th, td { border: 1px solid var(--line); padding: 5px 8px; text-align: left; vertical-align: top; font-size: 11.8px; }
+  th { background: #f5f7fa; font-weight: 600; white-space: nowrap; }
+  td.decision { font-weight: 600; }
+  .flow {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 3px;
+    margin: 8px 0 2px;
+  }
+  .flow .step {
+    background: #f5f7fa; border: 1px solid var(--line); border-radius: 4px;
+    padding: 4px 9px; font-size: 11.5px; white-space: nowrap;
+  }
+  .flow .step.hl { background: var(--accent-bg); border-color: #b7d3f2; font-weight: 600; }
+  .flow .arr { color: var(--accent); font-weight: 700; font-size: 13px; }
+  .cols { display: flex; gap: 14px; }
+  .cols > div { flex: 1; }
+  .scope-box { border-radius: 6px; padding: 9px 13px; }
+  .scope-in { background: var(--ok-bg); border: 1px solid var(--ok-line); }
+  .scope-out { background: #f6f7f8; border: 1px dashed #b8bec8; }
+  .scope-box h3 { font-size: 12.5px; margin-bottom: 5px; }
+  .scope-in h3 { color: #1c7a37; }
+  .scope-out h3 { color: var(--sub); }
+  .scope-box ul { padding-left: 17px; }
+  .scope-box li { margin: 1.5px 0; }
+  .risk-box { background: var(--warn-bg); border: 1px solid var(--warn-line); border-radius: 6px; padding: 9px 13px; }
+  .risk-box ol { padding-left: 17px; }
+  .risk-box li { margin: 2px 0; }
+  .todo-box { background: #f5f7fa; border: 1px solid var(--line); border-radius: 6px; padding: 9px 13px; }
+  .todo-box ul { padding-left: 17px; }
+  .role-tag { display: inline-block; background: #eef1f5; border-radius: 3px; padding: 0 6px; font-size: 10.8px; color: var(--sub); }
+  footer { margin-top: 16px; padding-top: 9px; border-top: 1px solid var(--line); color: var(--sub); font-size: 10.5px; display: flex; justify-content: space-between; }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .page { box-shadow: none; max-width: none; padding: 10mm 12mm; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <h1>门店补货与库存协同系统 · 一页纸需求清单</h1>
+  <div class="meta">需求评审版 V1.0 · 2026-10-30<br>评审人：架构师 × 项目发起人</div>
+</header>
+
+<div class="positioning">
+  <b>项目定位：</b>独立部署的补货协同决策系统（不嵌入 ERP）。服务「总部 — 总仓 — 10 家门店」的内部协同闭环：基于 T+1 销售与库存数据，按可配置规则自动生成补货建议，经人工确认后执行，并以经营看板度量效果。
+</div>
+
+<h2>一、用户角色矩阵</h2>
+<table>
+  <tr><th style="width:130px">角色</th><th style="width:95px">主要端</th><th>核心职责与权限（一期）</th></tr>
+  <tr><td>总部补货计划员</td><td>PC Web</td><td>补货规则配置与试算、建议单批量处理、审批店长超阈值调整、缺货告警处置</td></tr>
+  <tr><td>门店店长</td><td>移动端（微信小程序）</td><td>每日确认 / 调整本店补货建议单（调整 &gt;±50% 触发审批）、接收缺货推送</td></tr>
+  <tr><td>区域物流经理</td><td>PC / 移动</td><td><b>只读 + 催办</b>：查看本区域建议单与告警，可催办备注，无修改权</td></tr>
+  <tr><td>数据/系统管理员</td><td>PC Web</td><td>主数据维护（商品/门店/供应商/仓）、T+1 同步监控与数据对账、账号权限</td></tr>
+  <tr><td>运营总监 / 管理层</td><td>PC / 移动</td><td>经营看板查看，总部 / 区域 / 门店三视角下钻</td></tr>
+</table>
+
+<h2>二、核心业务闭环</h2>
+<div class="flow">
+  <span class="step">T+1 数据同步（ERP/POS）</span><span class="arr">→</span>
+  <span class="step">数据对账校验</span><span class="arr">→</span>
+  <span class="step hl">规则计算（安全库存 / min-max / 阈值）</span><span class="arr">→</span>
+  <span class="step hl">补货建议单</span><span class="arr">→</span>
+  <span class="step hl">店长确认 / 调整（留痕）</span><span class="arr">→</span>
+  <span class="step">执行 / 采购单导出</span><span class="arr">→</span>
+  <span class="step">回单核销</span><span class="arr">→</span>
+  <span class="step">每日指标看板</span>
+</div>
+
+<h2>三、十项关键决策记录</h2>
+<table>
+  <tr><th style="width:42px">#</th><th style="width:190px">决策结论</th><th>架构影响</th></tr>
+  <tr><td>Q1</td><td class="decision">独立系统，不嵌 ERP</td><td>自建商品/库存/门店/供应商主数据模型与 RBAC + 行级权限；工期较外挂模式 +30%~40%</td></tr>
+  <tr><td>Q2</td><td class="decision">T+1 批量同步（文件/接口）</td><td>轻量 ETL + 每日对账告警，不引入消息队列/实时管道；看板注明数据日期</td></tr>
+  <tr><td>Q3</td><td class="decision">系统建议 + 人工确认</td><td>建议单状态机（生成→确认→执行→核销），人工调整全程留痕，超时 24h 微信提醒</td></tr>
+  <tr><td>Q4</td><td class="decision">一期固定规则引擎</td><td>参数化规则可按商品类目自助配置；规则改前可用历史数据试算；计算层独立封装，为二期 ML 预测预留替换点</td></tr>
+  <tr><td>Q5</td><td class="decision">10 店 / 千级 SKU</td><td>单体应用 + MySQL/PG 单库，2C4G 云主机起步；表结构按 100 店量级留余量</td></tr>
+  <tr><td>Q6</td><td class="decision">店长移动优先</td><td>推荐微信小程序（免安装、订阅消息触达）+ PC Web 双端共用一套 API</td></tr>
+  <tr><td>Q7</td><td class="decision">区域只读催办；告警广播+认领；±50% 超限审批</td><td>缺货告警三级同时可见、谁处理谁认领；全系统仅保留一级审批</td></tr>
+  <tr><td>Q8</td><td class="decision">供应商不进系统</td><td>无对外 API 暴露面；采购需求走导出/邮件；单据模型预留对外扩展</td></tr>
+  <tr><td>Q9</td><td class="decision">每日快照看板（非实时）</td><td>轻量指标层（批处理后刷新），4 项核心指标口径评审期冻结签字</td></tr>
+  <tr><td>Q10</td><td class="decision">6 个月内上线</td><td>一期砍至核心闭环；里程碑见第五节</td></tr>
+</table>
+
+<h2>四、一期范围边界</h2>
+<div class="cols">
+  <div class="scope-box scope-in">
+    <h3>✓ 一期做（In Scope）</h3>
+    <ul>
+      <li>主数据管理（四类主数据 + 初始导入清洗）</li>
+      <li>T+1 数据同步 + 自动对账告警</li>
+      <li>规则引擎 + 参数配置 + 规则历史试算</li>
+      <li>补货建议单全生命周期 + 超限审批 + 留痕</li>
+      <li>微信小程序端（店长）+ PC Web 端（总部）</li>
+      <li>缺货告警广播与认领</li>
+      <li>每日经营看板（4 指标，三视角下钻）</li>
+      <li>采购要货单导出（Excel）</li>
+    </ul>
+  </div>
+  <div class="scope-box scope-out">
+    <h3>✗ 一期不做（Out of Scope）</h3>
+    <ul>
+      <li>需求预测 / ML 算法（二期，仅预留接口）</li>
+      <li>自动生成单据并直接下发执行</li>
+      <li>供应商 VMI、到货预约、EDI 对接</li>
+      <li>实时数据管道（CDC / 消息队列）</li>
+      <li>原生 App（iOS / Android）</li>
+      <li>店间调拨（<span class="role-tag">待确认</span>，若需要补入数据模型）</li>
+    </ul>
+  </div>
+</div>
+
+<h2>五、里程碑建议（6 个月）</h2>
+<table>
+  <tr><th style="width:105px">M1 · 第 1–2 月</th><th style="width:130px">M2 · 第 3–4 月</th><th style="width:105px">M3 · 第 5 月</th><th>M4 · 第 6 月</th></tr>
+  <tr><td>主数据模型 + 权限体系 + T+1 同步与对账</td><td>规则引擎 + 试算 + 建议单闭环 + PC 端</td><td>微信小程序端 + 看板 + 告警推送</td><td>双店试点 → 问题修复 → 10 店推广上线</td></tr>
+</table>
+
+<h2>六、主要风险</h2>
+<div class="risk-box">
+  <ol>
+    <li><b>主数据质量</b>：商品条码 / 门店档案初始清洗是最大人力黑洞，实施计划须预留专项清理期</li>
+    <li><b>指标口径之争</b>：缺货率分母、周转销量窗口等口径须在开发前由运营总监签字冻结，否则看板验收必延期</li>
+    <li><b>店长确认不及时</b>：建议单堆积将使闭环空转，靠小程序订阅消息 + 超时升级提醒兜底，试点期人工督导</li>
+    <li><b>ERP 导出稳定性</b>：T+1 依赖上游文件格式，上游改版需建立变更通知机制</li>
+  </ol>
+</div>
+
+<h2>七、待确认事项</h2>
+<div class="todo-box">
+  <ul>
+    <li>现有 ERP / 收银系统产品及导出方式（决定主数据同步为标准接口还是定制开发）</li>
+    <li>是否允许店间调拨（影响数据模型，M1 前必须定）</li>
+    <li>预算区间与交付方式（自研 / 外包 / 混合）</li>
+    <li>4 项看板指标计算口径的正式确认与签字</li>
+  </ul>
+</div>
+
+<footer>
+  <span>门店补货与库存协同系统 · 需求清单 V1.0</span>
+  <span>技术选型基线：单体后端 + MySQL + ECharts 看板 + 微信小程序 · 云单机部署</span>
+</footer>
+
+</div>
+</body>
+</html>

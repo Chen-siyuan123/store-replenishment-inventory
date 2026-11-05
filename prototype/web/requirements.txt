@@ -1,0 +1,20 @@
+# 门店补货与库存协同智能体 · Python 依赖
+# 安装：python -m pip install -r requirements.txt
+# 版本按开发环境实测通过的版本给出下界，不锁死小版本
+
+# ---- Web 服务 ----
+fastapi>=0.115          # 异步 Web 框架（SSE 流式响应）
+uvicorn>=0.30           # ASGI 服务器
+pydantic>=2.0           # 请求/响应模型校验
+python-multipart>=0.0.9 # 文件上传（知识库管理页）
+PyJWT>=2.8              # 登录鉴权（HS256）
+
+# ---- 检索（核心模块①②）----
+requests>=2.31          # 调用 LLM / embedding 接口
+numpy>=1.26             # 向量运算
+faiss-cpu>=1.8          # 向量索引（IndexFlatIP + 归一化 = 余弦相似度）
+jieba>=0.42             # 中文分词（BM25 与哈希向量共用）
+rank-bm25>=0.2          # BM25 关键词检索
+
+# ---- 文档解析 ----
+pypdf>=4.0              # 知识库 PDF 上传（仅文字层，不支持扫描件）

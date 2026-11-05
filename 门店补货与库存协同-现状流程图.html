@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>门店补货与库存协同 · 现状流程图</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 32px 28px 40px;
+    background: #F7F6F3;
+    font-family: "PingFang SC", "Microsoft YaHei", -apple-system, "Segoe UI", sans-serif;
+    color: #2C2C2A;
+  }
+  .head { text-align: center; margin-bottom: 22px; }
+  .head h1 { font-size: 26px; font-weight: 600; margin: 0 0 8px; letter-spacing: 0.5px; }
+  .head .sub { display: inline-flex; align-items: center; gap: 8px; }
+  .badge {
+    display: inline-block; font-size: 13px; font-weight: 500;
+    color: #993C1D; background: #FAECE7; border: 1px solid #F0997B;
+    border-radius: 6px; padding: 3px 12px; letter-spacing: 1px;
+  }
+  .meta { font-size: 12px; color: #888780; margin-top: 8px; }
+  .canvas {
+    background: #fff; border: 1px solid #E4E2DA; border-radius: 10px;
+    padding: 20px 8px 8px; max-width: 1400px; margin: 0 auto;
+  }
+  svg { display: block; width: 100%; height: auto; }
+  .note { max-width: 1400px; margin: 18px auto 0; font-size: 12px; color: #888780; line-height: 1.9; }
+  .note b { color: #5F5E5A; font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="head">
+  <h1>门店补货与库存协同</h1>
+  <div class="sub"><span class="badge">现 状</span></div>
+  <div class="meta">基于拾光连锁 6 位角色访谈（36/36 事实）还原的人工现状泳道 · 48 家门店</div>
+</div>
+
+<div class="canvas">
+<svg viewBox="0 0 1300 1290" role="img" xmlns="http://www.w3.org/2000/svg">
+<title>门店补货与库存协同现状流程图</title>
+<desc>以泳道形式还原门店、总部补货计划、仓储配送、系统与数据、人工兜底五条链路的人工现状补货流程，并标出关键断点。</desc>
+<defs>
+  <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#888780" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="arR" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#D85A30" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+  <marker id="arB" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+    <path d="M2 1L8 5L2 9" fill="none" stroke="#378ADD" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+  </marker>
+</defs>
+
+<!-- 阶段表头 -->
+<g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+  <rect x="20" y="14" width="150" height="30" rx="6" fill="#F1EFE8"/>
+  <text x="95" y="29" font-size="12" font-weight="500" fill="#5F5E5A" text-anchor="middle" dominant-baseline="central">环节 / 角色</text>
+  <rect x="200" y="14" width="150" height="30" rx="6" fill="#F1EFE8"/>
+  <text x="275" y="29" font-size="12" fill="#5F5E5A" text-anchor="middle" dominant-baseline="central">① 触发</text>
+  <rect x="370" y="14" width="150" height="30" rx="6" fill="#F1EFE8"/>
+  <text x="445" y="29" font-size="12" fill="#5F5E5A" text-anchor="middle" dominant-baseline="central">② 读库存</text>
+  <rect x="530" y="14" width="150" height="30" rx="6" fill="#F1EFE8"/>
+  <text x="605" y="29" font-size="12" fill="#5F5E5A" text-anchor="middle" dominant-baseline="central">③ 报数汇总</text>
+  <rect x="690" y="14" width="150" height="30" rx="6" fill="#F1EFE8"/>
+  <text x="765" y="29" font-size="12" fill="#5F5E5A" text-anchor="middle" dominant-baseline="central">④ 调建议量</text>
+  <rect x="850" y="14" width="150" height="30" rx="6" fill="#F1EFE8"/>
+  <text x="925" y="29" font-size="12" fill="#5F5E5A" text-anchor="middle" dominant-baseline="central">⑤ 分配审批</text>
+  <rect x="1010" y="14" width="150" height="30" rx="6" fill="#F1EFE8"/>
+  <text x="1085" y="29" font-size="12" fill="#5F5E5A" text-anchor="middle" dominant-baseline="central">⑥ 配送交接</text>
+  <rect x="1170" y="14" width="110" height="30" rx="6" fill="#F1EFE8"/>
+  <text x="1225" y="29" font-size="12" fill="#5F5E5A" text-anchor="middle" dominant-baseline="central">⑦ 到店</text>
+</g>
+
+<!-- 泳道背景 -->
+<g>
+  <rect x="20" y="56" width="1260" height="230" rx="10" fill="#EAF3DE" opacity="0.38"/>
+  <rect x="20" y="298" width="1260" height="230" rx="10" fill="#E6F1FB" opacity="0.38"/>
+  <rect x="20" y="540" width="1260" height="230" rx="10" fill="#FAEEDA" opacity="0.34"/>
+  <rect x="20" y="782" width="1260" height="190" rx="10" fill="#EEEDFE" opacity="0.40"/>
+  <rect x="20" y="984" width="1260" height="150" rx="10" fill="#FCEBEB" opacity="0.42"/>
+</g>
+
+<!-- 泳道标题 -->
+<g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+  <rect x="30" y="68" width="132" height="206" rx="8" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+  <text x="96" y="158" font-size="15" font-weight="500" fill="#27500A" text-anchor="middle" dominant-baseline="central">门店</text>
+  <text x="96" y="180" font-size="11.5" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">店长 / 店员</text>
+  <text x="96" y="200" font-size="11.5" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">林亦舟</text>
+
+  <rect x="30" y="310" width="132" height="206" rx="8" fill="#E6F1FB" stroke="#85B7EB" stroke-width="0.5"/>
+  <text x="96" y="390" font-size="15" font-weight="500" fill="#0C447C" text-anchor="middle" dominant-baseline="central">总部补货计划</text>
+  <text x="96" y="412" font-size="11.5" fill="#185FA5" text-anchor="middle" dominant-baseline="central">计划员 / 总监</text>
+  <text x="96" y="432" font-size="11.5" fill="#185FA5" text-anchor="middle" dominant-baseline="central">唐映秋 · 顾明岚</text>
+
+  <rect x="30" y="552" width="132" height="206" rx="8" fill="#FAEEDA" stroke="#FAC775" stroke-width="0.5"/>
+  <text x="96" y="642" font-size="15" font-weight="500" fill="#633806" text-anchor="middle" dominant-baseline="central">仓储与配送</text>
+  <text x="96" y="664" font-size="11.5" fill="#854F0B" text-anchor="middle" dominant-baseline="central">区域物流经理</text>
+  <text x="96" y="684" font-size="11.5" fill="#854F0B" text-anchor="middle" dominant-baseline="central">叶书</text>
+
+  <rect x="30" y="794" width="132" height="166" rx="8" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="0.5"/>
+  <text x="96" y="864" font-size="15" font-weight="500" fill="#26215C" text-anchor="middle" dominant-baseline="central">系统与数据</text>
+  <text x="96" y="886" font-size="11.5" fill="#534AB7" text-anchor="middle" dominant-baseline="central">POS / WMS / 群聊</text>
+  <text x="96" y="906" font-size="11.5" fill="#534AB7" text-anchor="middle" dominant-baseline="central">秦芮</text>
+
+  <rect x="30" y="996" width="132" height="126" rx="8" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+  <text x="96" y="1046" font-size="15" font-weight="500" fill="#791F1F" text-anchor="middle" dominant-baseline="central">人工兜底</text>
+  <text x="96" y="1068" font-size="11.5" fill="#A32D2D" text-anchor="middle" dominant-baseline="central">群聊 / 个人表</text>
+  <text x="96" y="1088" font-size="11.5" fill="#A32D2D" text-anchor="middle" dominant-baseline="central">补录</text>
+</g>
+
+<!-- 重绘表头（保证在最上层） -->
+<g font-family="PingFang SC, Microsoft YaHei, sans-serif" opacity="1">
+</g>
+
+<g class="cells" font-family="PingFang SC, Microsoft YaHei, sans-serif">
+  <!-- 门店泳道 -->
+  <g>
+    <rect x="200" y="84" width="150" height="62" rx="8" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+    <text x="275" y="105" font-size="13" font-weight="500" fill="#27500A" text-anchor="middle" dominant-baseline="central">每日重点巡检</text>
+    <text x="275" y="126" font-size="11.5" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">20 个重点 SKU</text>
+  </g>
+  <g>
+    <rect x="370" y="84" width="150" height="84" rx="8" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+    <text x="445" y="103" font-size="13" font-weight="500" fill="#27500A" text-anchor="middle" dominant-baseline="central">看货架 + 看系统</text>
+    <text x="445" y="124" font-size="11.5" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">后仓有货、货架空</text>
+    <text x="445" y="144" font-size="11.5" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">系统仍显示有库存</text>
+  </g>
+  <g>
+    <rect x="530" y="84" width="150" height="84" rx="8" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+    <text x="605" y="103" font-size="13" font-weight="500" fill="#27500A" text-anchor="middle" dominant-baseline="central">凭经验报需求</text>
+    <text x="605" y="124" font-size="11.5" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">分清“有货/可售”</text>
+    <text x="605" y="144" font-size="11.5" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">账实差异约 8%</text>
+  </g>
+  <g>
+    <rect x="850" y="84" width="150" height="62" rx="8" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+    <text x="925" y="105" font-size="13" font-weight="500" fill="#27500A" text-anchor="middle" dominant-baseline="central">看不到分配依据</text>
+    <text x="925" y="126" font-size="11.5" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">不知为何这样分</text>
+  </g>
+  <g>
+    <rect x="1010" y="84" width="150" height="84" rx="8" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+    <text x="1085" y="103" font-size="13" font-weight="500" fill="#27500A" text-anchor="middle" dominant-baseline="central">收货上架</text>
+    <text x="1085" y="124" font-size="11.5" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">无预计到货时间</text>
+    <text x="1085" y="144" font-size="11.5" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">不知未满足数量</text>
+  </g>
+  <g>
+    <rect x="1170" y="84" width="110" height="62" rx="8" fill="#EAF3DE" stroke="#97C459" stroke-width="0.5"/>
+    <text x="1225" y="105" font-size="13" font-weight="500" fill="#27500A" text-anchor="middle" dominant-baseline="central">爆款仍缺货</text>
+    <text x="1225" y="126" font-size="11.5" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">缺货率 12%</text>
+  </g>
+  <g>
+    <rect x="370" y="196" width="480" height="62" rx="8" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+    <text x="610" y="216" font-size="12.5" font-weight="500" fill="#791F1F" text-anchor="middle" dominant-baseline="central">异常：临时促销 / 变价 —— 原预测直接失效</text>
+    <text x="610" y="238" font-size="11.5" fill="#A32D2D" text-anchor="middle" dominant-baseline="central">价位一变，历史销量不再可比；门店只能靠人盯，改不了规则与系统口径</text>
+  </g>
+
+  <!-- 总部泳道 -->
+  <g>
+    <rect x="370" y="326" width="150" height="84" rx="8" fill="#E6F1FB" stroke="#85B7EB" stroke-width="0.5"/>
+    <text x="445" y="345" font-size="13" font-weight="500" fill="#0C447C" text-anchor="middle" dominant-baseline="central">促销日历</text>
+    <text x="445" y="366" font-size="11.5" fill="#185FA5" text-anchor="middle" dominant-baseline="central">运营维护</text>
+    <text x="445" y="386" font-size="11.5" fill="#185FA5" text-anchor="middle" dominant-baseline="central">门店改价不总回传</text>
+  </g>
+  <g>
+    <rect x="530" y="326" width="150" height="84" rx="8" fill="#E6F1FB" stroke="#85B7EB" stroke-width="0.5"/>
+    <text x="605" y="345" font-size="13" font-weight="500" fill="#0C447C" text-anchor="middle" dominant-baseline="central">汇总门店报数</text>
+    <text x="605" y="366" font-size="11.5" fill="#185FA5" text-anchor="middle" dominant-baseline="central">POS 按日汇总</text>
+    <text x="605" y="386" font-size="11.5" fill="#185FA5" text-anchor="middle" dominant-baseline="central">叠加人工经验</text>
+  </g>
+  <g>
+    <rect x="690" y="326" width="150" height="84" rx="8" fill="#E6F1FB" stroke="#85B7EB" stroke-width="0.5"/>
+    <text x="765" y="345" font-size="13" font-weight="500" fill="#0C447C" text-anchor="middle" dominant-baseline="central">人工调建议量</text>
+    <text x="765" y="366" font-size="11.5" fill="#185FA5" text-anchor="middle" dominant-baseline="central">卡最小起订量</text>
+    <text x="765" y="386" font-size="11.5" fill="#185FA5" text-anchor="middle" dominant-baseline="central">整箱规格 / 仓容</text>
+  </g>
+  <g>
+    <rect x="850" y="326" width="150" height="84" rx="8" fill="#E6F1FB" stroke="#85B7EB" stroke-width="0.5"/>
+    <text x="925" y="345" font-size="13" font-weight="500" fill="#0C447C" text-anchor="middle" dominant-baseline="central">超权限走审批</text>
+    <text x="925" y="366" font-size="11.5" fill="#185FA5" text-anchor="middle" dominant-baseline="central">跨店调拨</text>
+    <text x="925" y="386" font-size="11.5" fill="#185FA5" text-anchor="middle" dominant-baseline="central">需区域经理批准</text>
+  </g>
+  <g>
+    <rect x="370" y="438" width="480" height="62" rx="8" fill="#FAEEDA" stroke="#EF9F27" stroke-width="0.5"/>
+    <text x="610" y="458" font-size="12.5" font-weight="500" fill="#633806" text-anchor="middle" dominant-baseline="central">断点：建议量口径不可复现，责任难界定</text>
+    <text x="610" y="480" font-size="11.5" fill="#854F0B" text-anchor="middle" dominant-baseline="central">调整依据留在个人表与群聊；滞销原因无记录；规则版本与现场不一致时说不清</text>
+  </g>
+
+  <!-- 仓储泳道 -->
+  <g>
+    <rect x="690" y="568" width="150" height="84" rx="8" fill="#FAEEDA" stroke="#FAC775" stroke-width="0.5"/>
+    <text x="765" y="587" font-size="13" font-weight="500" fill="#633806" text-anchor="middle" dominant-baseline="central">仓库分配</text>
+    <text x="765" y="608" font-size="11.5" fill="#854F0B" text-anchor="middle" dominant-baseline="central">按分配上限切分</text>
+    <text x="765" y="628" font-size="11.5" fill="#854F0B" text-anchor="middle" dominant-baseline="central">小门店仓容有限</text>
+  </g>
+  <g>
+    <rect x="850" y="568" width="150" height="84" rx="8" fill="#FAEEDA" stroke="#FAC775" stroke-width="0.5"/>
+    <text x="925" y="587" font-size="13" font-weight="500" fill="#633806" text-anchor="middle" dominant-baseline="central">线路容量卡口</text>
+    <text x="925" y="608" font-size="11.5" fill="#854F0B" text-anchor="middle" dominant-baseline="central">周一 / 三 / 五配送</text>
+    <text x="925" y="628" font-size="11.5" fill="#854F0B" text-anchor="middle" dominant-baseline="central">装不下就排队</text>
+  </g>
+  <g>
+    <rect x="1010" y="568" width="150" height="84" rx="8" fill="#FAEEDA" stroke="#FAC775" stroke-width="0.5"/>
+    <text x="1085" y="587" font-size="13" font-weight="500" fill="#633806" text-anchor="middle" dominant-baseline="central">截单与配送</text>
+    <text x="1085" y="608" font-size="11.5" fill="#854F0B" text-anchor="middle" dominant-baseline="central">截单时间未核查</text>
+    <text x="1085" y="628" font-size="11.5" fill="#854F0B" text-anchor="middle" dominant-baseline="central">签收留痕不完整</text>
+  </g>
+  <g>
+    <rect x="690" y="680" width="470" height="62" rx="8" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+    <text x="925" y="700" font-size="12.5" font-weight="500" fill="#791F1F" text-anchor="middle" dominant-baseline="central">异常：约 30% 的延迟补货来自配送排队，不是预测误差</text>
+    <text x="925" y="722" font-size="11.5" fill="#A32D2D" text-anchor="middle" dominant-baseline="central">门店只看到“已发出”，未满足数量无解释通道，投诉落到区域物流</text>
+  </g>
+
+  <!-- 系统泳道 -->
+  <g>
+    <rect x="370" y="808" width="150" height="62" rx="8" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="0.5"/>
+    <text x="445" y="829" font-size="13" font-weight="500" fill="#26215C" text-anchor="middle" dominant-baseline="central">POS 按日汇总</text>
+    <text x="445" y="850" font-size="11.5" fill="#534AB7" text-anchor="middle" dominant-baseline="central">T+1 才有销量</text>
+  </g>
+  <g>
+    <rect x="530" y="808" width="150" height="84" rx="8" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="0.5"/>
+    <text x="605" y="827" font-size="13" font-weight="500" fill="#26215C" text-anchor="middle" dominant-baseline="central">WMS 出库实时</text>
+    <text x="605" y="848" font-size="11.5" fill="#534AB7" text-anchor="middle" dominant-baseline="central">库存口径与门店</text>
+    <text x="605" y="868" font-size="11.5" fill="#534AB7" text-anchor="middle" dominant-baseline="central">盘点口径不一致</text>
+  </g>
+  <g>
+    <rect x="690" y="808" width="150" height="84" rx="8" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="0.5"/>
+    <text x="765" y="827" font-size="13" font-weight="500" fill="#26215C" text-anchor="middle" dominant-baseline="central">编码不统一</text>
+    <text x="765" y="848" font-size="11.5" fill="#534AB7" text-anchor="middle" dominant-baseline="central">新旧码并存</text>
+    <text x="765" y="868" font-size="11.5" fill="#534AB7" text-anchor="middle" dominant-baseline="central">套装码并存</text>
+  </g>
+  <g>
+    <rect x="850" y="808" width="150" height="84" rx="8" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="0.5"/>
+    <text x="925" y="827" font-size="13" font-weight="500" fill="#26215C" text-anchor="middle" dominant-baseline="central">零销量＝缺货？</text>
+    <text x="925" y="848" font-size="11.5" fill="#534AB7" text-anchor="middle" dominant-baseline="central">缺货截断未标识</text>
+    <text x="925" y="868" font-size="11.5" fill="#534AB7" text-anchor="middle" dominant-baseline="central">缺货以谁为准未定</text>
+  </g>
+  <g>
+    <rect x="1010" y="808" width="150" height="84" rx="8" fill="#EEEDFE" stroke="#AFA9EC" stroke-width="0.5"/>
+    <text x="1085" y="827" font-size="13" font-weight="500" fill="#26215C" text-anchor="middle" dominant-baseline="central">供应商接口未批</text>
+    <text x="1085" y="848" font-size="11.5" fill="#534AB7" text-anchor="middle" dominant-baseline="central">手工导出 CSV</text>
+    <text x="1085" y="868" font-size="11.5" fill="#534AB7" text-anchor="middle" dominant-baseline="central">自动采购不能上线</text>
+  </g>
+  <g>
+    <rect x="370" y="906" width="480" height="40" rx="8" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+    <text x="610" y="926" font-size="12" font-weight="500" fill="#791F1F" text-anchor="middle" dominant-baseline="central">断点：缺货率 12% 的分子分母本身不可靠 → 预测输入被污染，账实差异平均 8%</text>
+  </g>
+
+  <!-- 人工兜底泳道 -->
+  <g>
+    <rect x="530" y="1008" width="150" height="84" rx="8" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+    <text x="605" y="1027" font-size="13" font-weight="500" fill="#791F1F" text-anchor="middle" dominant-baseline="central">群聊 / 个人表</text>
+    <text x="605" y="1048" font-size="11.5" fill="#A32D2D" text-anchor="middle" dominant-baseline="central">临时促销说明</text>
+    <text x="605" y="1068" font-size="11.5" fill="#A32D2D" text-anchor="middle" dominant-baseline="central">缺货截断说明</text>
+  </g>
+  <g>
+    <rect x="690" y="1008" width="150" height="84" rx="8" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+    <text x="765" y="1027" font-size="13" font-weight="500" fill="#791F1F" text-anchor="middle" dominant-baseline="central">事后回系统补录</text>
+    <text x="765" y="1048" font-size="11.5" fill="#A32D2D" text-anchor="middle" dominant-baseline="central">原因无结构化字段</text>
+    <text x="765" y="1068" font-size="11.5" fill="#A32D2D" text-anchor="middle" dominant-baseline="central">交接中容易丢失</text>
+  </g>
+  <g>
+    <rect x="850" y="1008" width="310" height="84" rx="8" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+    <text x="1005" y="1027" font-size="13" font-weight="500" fill="#791F1F" text-anchor="middle" dominant-baseline="central">并行：现状没有停止条件与人工复核</text>
+    <text x="1005" y="1048" font-size="11.5" fill="#A32D2D" text-anchor="middle" dominant-baseline="central">临时促销 / 缺货截断 / 账实不一致 / 依据缺失 / 系统不可用时</text>
+    <text x="1005" y="1068" font-size="11.5" fill="#A32D2D" text-anchor="middle" dominant-baseline="central">仍按旧口径继续推，无原因、接手人、确认时间留痕</text>
+  </g>
+</g>
+
+<!-- 连线 -->
+<g fill="none" stroke="#888780" stroke-width="1.6">
+  <path d="M350 115 L370 115" marker-end="url(#ar)"/>
+  <path d="M520 115 L530 115" marker-end="url(#ar)"/>
+  <path d="M605 168 L605 326" marker-end="url(#ar)"/>
+  <path d="M680 368 L690 368" marker-end="url(#ar)"/>
+  <path d="M840 368 L850 368" marker-end="url(#ar)"/>
+  <path d="M1000 368 L1010 368" marker-end="url(#ar)"/>
+  <path d="M765 410 L765 568" marker-end="url(#ar)"/>
+  <path d="M840 610 L850 610" marker-end="url(#ar)"/>
+  <path d="M1000 610 L1010 610" marker-end="url(#ar)"/>
+  <path d="M1085 652 L1085 700 L1160 700" marker-end="url(#ar)"/>
+  <path d="M1160 700 L1225 700 L1225 146" marker-end="url(#ar)"/>
+</g>
+
+<g fill="none" stroke="#378ADD" stroke-width="1.4" stroke-dasharray="5 4">
+  <path d="M445 890 L445 400" marker-end="url(#arB)"/>
+  <path d="M605 890 L605 400" marker-end="url(#arB)"/>
+  <path d="M765 890 L765 410" marker-end="url(#arB)"/>
+</g>
+
+<g fill="none" stroke="#D85A30" stroke-width="1.4" stroke-dasharray="5 4">
+  <path d="M605 196 L605 172" marker-end="url(#arR)"/>
+  <path d="M605 1008 L605 992 L605 890" marker-end="url(#arR)"/>
+</g>
+
+<g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+  <text x="452" y="300" font-size="11" fill="#185FA5">库存/销量数据</text>
+  <text x="612" y="300" font-size="11" fill="#185FA5">汇总口径</text>
+  <text x="772" y="300" font-size="11" fill="#185FA5">编码归并</text>
+  <text x="560" y="186" font-size="11" fill="#D85A30">人工说明</text>
+  <text x="615" y="952" font-size="11" fill="#D85A30">补录</text>
+</g>
+
+<g font-family="PingFang SC, Microsoft YaHei, sans-serif">
+  <text x="28" y="1166" font-size="12" fill="#5F5E5A">图例：</text>
+  <line x1="72" y1="1162" x2="112" y2="1162" stroke="#888780" stroke-width="1.6" marker-end="url(#ar)"/>
+  <text x="120" y="1166" font-size="12" fill="#5F5E5A">人工处理顺序</text>
+  <line x1="212" y1="1162" x2="252" y2="1162" stroke="#378ADD" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arB)"/>
+  <text x="260" y="1166" font-size="12" fill="#5F5E5A">数据单向流入（反向不可见）</text>
+  <line x1="430" y1="1162" x2="470" y2="1162" stroke="#D85A30" stroke-width="1.4" stroke-dasharray="5 4" marker-end="url(#arR)"/>
+  <text x="478" y="1166" font-size="12" fill="#5F5E5A">非结构化口头/群聊补救</text>
+  <rect x="640" y="1154" width="14" height="14" rx="3" fill="#FCEBEB" stroke="#F09595" stroke-width="0.5"/>
+  <text x="662" y="1166" font-size="12" fill="#5F5E5A">异常 / 断点</text>
+</g>
+</svg>
+</div>
+
+<div class="note">
+  <b>读法：</b>上方标题为项目名称与“现状”标识；横向为补货链路的七个环节，纵向为五类角色（门店、总部补货计划、仓储与配送、系统与数据、人工兜底）。<br>
+  <b>关键断点：</b>① 后仓有货但不可售、系统仍算库存（账实差异约 8%）；② 缺货率 12% 的分子分母口径未统一；③ 约 30% 延迟来自配送排队而非预测；④ 促销变价与临时说明未结构化，靠群聊补录；⑤ 门店看不到分配依据与预计到货。<br>
+  <b>来源：</b>拾光连锁业务需求发现报告（retail-f00 ~ retail-f55），为待验证假设，需以业务日志与现场观察交叉核实。
+</div>
+
+</body>
+</html>

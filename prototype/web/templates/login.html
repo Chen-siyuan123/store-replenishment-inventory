@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>登录 · 门店补货与库存协同</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    height: 100vh; display: flex; align-items: center; justify-content: center;
+    background: #f4f6f9;
+  }
+  .card {
+    width: 380px; background: #fff; border: 1px solid #e5e5e5;
+    border-radius: 12px; padding: 36px 32px;
+  }
+  .card h1 { font-size: 18px; color: #0f6e56; font-weight: 600; text-align: center; }
+  .card .sub { font-size: 12px; color: #888780; text-align: center; margin: 6px 0 24px; }
+  .field { margin-bottom: 16px; }
+  .field label { display: block; font-size: 13px; color: #444; margin-bottom: 6px; }
+  .field input {
+    width: 100%; padding: 10px 12px; font-size: 14px; border: 1px solid #d3d1c7;
+    border-radius: 8px; outline: none;
+  }
+  .field input:focus { border-color: #0f6e56; }
+  .btn-login {
+    width: 100%; padding: 11px; border: none; background: #0f6e56; color: #fff;
+    font-size: 14px; border-radius: 8px; cursor: pointer; margin-top: 8px;
+  }
+  .btn-login:disabled { background: #b4b2a9; cursor: not-allowed; }
+  .error {
+    display: none; background: #fcebeb; border: 1px solid #f09595; color: #a32d2d;
+    font-size: 13px; border-radius: 8px; padding: 8px 12px; margin-bottom: 14px;
+  }
+  .hint { margin-top: 20px; font-size: 12px; color: #b4b2a9; line-height: 1.8; }
+  .hint b { color: #888780; }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>门店补货与库存协同</h1>
+    <p class="sub">制度问答 · 补货协同智能体系统</p>
+
+    <div class="error" id="error"></div>
+
+    <div class="field">
+      <label>用户名</label>
+      <input type="text" id="username" placeholder="请输入用户名" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>密码</label>
+      <input type="password" id="password" placeholder="请输入密码" autocomplete="current-password">
+    </div>
+    <button class="btn-login" id="btnLogin">登 录</button>
+
+    <div class="hint">
+      测试账号：<br>
+      <b>总部管理员</b> admin / admin@123（可进管理后台）<br>
+      <b>门店店长</b> store01 / store@123（朝阳路店）
+    </div>
+  </div>
+
+<script>
+const $error = document.getElementById('error');
+const $btn = document.getElementById('btnLogin');
+
+function showError(msg) { $error.style.display = 'block'; $error.textContent = msg; }
+
+async function doLogin() {
+  const username = document.getElementById('username').value.trim();
+  const password = document.getElementById('password').value;
+  if (!username || !password) { showError('请输入用户名和密码'); return; }
+
+  $btn.disabled = true; $btn.textContent = '登录中…';
+  try {
+    const resp = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password })
+    });
+    const data = await resp.json();
+
+    if (!resp.ok) { showError(data.message || '登录失败，请稍后重试'); return; }
+
+    // token 存 localStorage，页面跳转后仍保持登录态
+    localStorage.setItem('token', data.token);
+    localStorage.setItem('me', JSON.stringify(data));
+
+    // 按角色跳转：管理员进后台，店长进问答页
+    location.href = data.role === 'admin' ? '/admin' : '/';
+  } catch (e) {
+    showError('网络异常，请确认服务已启动');
+  } finally {
+    $btn.disabled = false; $btn.textContent = '登 录';
+  }
+}
+
+document.getElementById('btnLogin').onclick = doLogin;
+document.getElementById('password').addEventListener('keydown', e => {
+  if (e.key === 'Enter') doLogin();
+});
+</script>
+</body>
+</html>

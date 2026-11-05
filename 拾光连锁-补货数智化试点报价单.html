@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<title>拾光连锁 · 补货数智化试点报价单</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 36px 26px;
+    background: #F7F6F3;
+    font-family: "PingFang SC", "Microsoft YaHei", -apple-system, "Segoe UI", sans-serif;
+    color: #2C2C2A;
+  }
+  .sheet {
+    max-width: 900px; margin: 0 auto; background: #fff;
+    border: 1px solid #E4E2DA; border-radius: 10px; padding: 38px 44px 34px;
+  }
+  .head { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #2C5F2D; padding-bottom: 16px; }
+  .head h1 { font-size: 24px; font-weight: 600; margin: 0 0 6px; letter-spacing: 1px; }
+  .head .sub { font-size: 12.5px; color: #888780; }
+  .head .no { text-align: right; font-size: 12px; color: #5F5E5A; line-height: 2; }
+  .info { display: flex; gap: 40px; margin: 18px 0 22px; font-size: 12.5px; line-height: 2; }
+  .info b { color: #5F5E5A; font-weight: 500; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th {
+    background: #EFF5EA; color: #27500A; font-weight: 500; text-align: left;
+    padding: 9px 12px; border: 1px solid #D8E3CC;
+  }
+  td { padding: 9px 12px; border: 1px solid #E4E2DA; vertical-align: top; line-height: 1.7; }
+  td.c { text-align: center; } td.r { text-align: right; white-space: nowrap; }
+  tr.total td { background: #F4F8F0; font-weight: 600; font-size: 13.5px; }
+  tr.group td { background: #FAFBF8; color: #5F5E5A; font-weight: 500; }
+  .note { margin-top: 20px; font-size: 12px; color: #888780; line-height: 2; }
+  .note b { color: #5F5E5A; font-weight: 500; }
+  .warn { background: #FAECE7; border: 1px solid #E08B63; color: #993C1D; border-radius: 6px; padding: 10px 14px; font-size: 12px; line-height: 1.9; margin-top: 16px; }
+  .sign { display: flex; justify-content: space-between; margin-top: 34px; font-size: 12.5px; color: #5F5E5A; }
+  .sign div { width: 30%; border-top: 1px solid #B4B2A9; padding-top: 8px; text-align: center; }
+</style>
+</head>
+<body>
+
+<div class="sheet">
+  <div class="head">
+    <div>
+      <h1>门店补货与库存协同 · 数智化试点报价单</h1>
+      <div class="sub">拾光连锁 48 家门店 · 首期试点：8 家门店 / 50 个常温 SKU / 6 周</div>
+    </div>
+    <div class="no">
+      报价单号：SG-2026-1023-01<br>
+      报价日期：2026-10-23<br>
+      有效期：30 天
+    </div>
+  </div>
+
+  <div class="info">
+    <div>
+      <b>甲方：</b>拾光连锁（业务牵头：运营总监 顾明岚）<br>
+      <b>风险否决：</b>商品与损耗经理 傅景（f04）
+    </div>
+    <div>
+      <b>范围：</b>数据治理 + AI 补货建议（仅常温 SKU）<br>
+      <b>排除：</b>短保/冷链分组试点、供应商合同变更、自动采购上线
+    </div>
+  </div>
+
+  <table>
+    <tr>
+      <th style="width:44px">序号</th>
+      <th>项目内容</th>
+      <th style="width:150px">交付物</th>
+      <th style="width:70px" class="c">数量</th>
+      <th style="width:100px" class="r">金额（元）</th>
+    </tr>
+
+    <tr class="group"><td colspan="5">一、数据治理与接口（对应 REQ-1）</td></tr>
+    <tr>
+      <td class="c">1</td>
+      <td>商品编码归并（新旧码/套装码 → 主编号）、缺货标识口径梳理与书面确认、字段清单；历史销售与库存 CSV 导出对接（供应商下单接口未审批，本期不含在线下单）</td>
+      <td>数据口径说明书、字段清单、CSV 接口</td>
+      <td class="c">1 套</td>
+      <td class="r">48,000</td>
+    </tr>
+    <tr>
+      <td class="c">2</td>
+      <td>促销版本结构化：促销日历字段最小集设计、门店改价回传采集、临时变价结构化入库（对应 REQ-3）</td>
+      <td>促销版本数据模型 + 一周试填报告</td>
+      <td class="c">1 套</td>
+      <td class="r">16,000</td>
+    </tr>
+
+    <tr class="group"><td colspan="5">二、AI 补货建议系统（对应 REQ-2 / REQ-5）</td></tr>
+    <tr>
+      <td class="c">3</td>
+      <td>AI 销量预测与补货建议量计算（每天两次刷新），内嵌最小起订量、整箱规格、仓库分配上限、配送日历与线路容量约束；历史 8 周数据回放比对</td>
+      <td>建议引擎 + 历史回放比对报告</td>
+      <td class="c">50 SKU</td>
+      <td class="r">46,000</td>
+    </tr>
+    <tr>
+      <td class="c">4</td>
+      <td>停止条件与人工复核机制：停止条件清单、具名接手人流转、审核日志（可重建当次处理，试点留痕 90 天）、门店端可见面板（预计到货 + 未满足数量 + 分配依据）</td>
+      <td>复核流程配置、审核日志、门店端面板</td>
+      <td class="c">1 套</td>
+      <td class="r">26,000</td>
+    </tr>
+
+    <tr class="group"><td colspan="5">三、培训与复核（对应 f03 成本分项）</td></tr>
+    <tr>
+      <td class="c">5</td>
+      <td>门店与总部培训：店长/店员现有终端操作、异常上报固定选项、计划员复核与日志留痕操作</td>
+      <td>操作手册 + 2 场培训</td>
+      <td class="c">8 门店</td>
+      <td class="r">12,000</td>
+    </tr>
+
+    <tr class="group"><td colspan="5">四、试点期运行与验收（对应 REQ-6）</td></tr>
+    <tr>
+      <td class="c">6</td>
+      <td>6 周试点运行维护：系统可用性保障、接口失败时人工流程兜底（f35）、每周三指标出数（缺货率/周转/报废 + 促销期误差单列）、每周复盘支持</td>
+      <td>周指标报告 ×6、复盘纪要</td>
+      <td class="c">6 周</td>
+      <td class="r">12,000</td>
+    </tr>
+
+    <tr class="total">
+      <td colspan="4">合计（含税）</td>
+      <td class="r">¥ 160,000</td>
+    </tr>
+  </table>
+
+  <div class="warn">
+    <b>报价边界与限制：</b>本报价以 8 家门店 / 50 个常温 SKU / 6 周试点为限。短保与冷链商品分组试点、48 家门店全量推广、自动采购上线、供应商下单接口对接均不在本期范围内，需另行评估报价。既有系统采购不计入节省额（f03）。
+  </div>
+
+  <div class="note">
+    <b>付款建议：</b>签约 30% → 数据口径书面确认后 30%（对应验收节点「口径确认方可建模」）→ 试点结束且三指标验收（缺货率 &lt; 5%、周转 ≤ 35 天、报废不增加、促销期误差单列）通过后 40%。<br>
+    <b>备注：</b>本单依据《拾光连锁 · 业务需求发现报告》（2026-10-23）编制；报告中标注「尚未核实」事项（缺货标识权威系统、指标拍板人、日志字段清单等）确认后如引起工作量变化，双方按变更流程调整。本报价为合成场景演示，不构成正式商务承诺。
+  </div>
+
+  <div class="sign">
+    <div>供方签字 / 盖章</div>
+    <div>需方签字 / 盖章</div>
+    <div>日期</div>
+  </div>
+</div>
+
+</body>
+</html>

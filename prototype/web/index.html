@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>门店补货与库存协同 · 店长问答</title>
+<style>
+  /* ===== 全局 ===== */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+    display: flex; height: 100vh; background: #f4f6f9; color: #2c2c2a;
+  }
+  /* ===== 左侧：会话历史侧栏 ===== */
+  .sidebar {
+    width: 240px; background: #ffffff; border-right: 1px solid #e5e5e5;
+    display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .sidebar-header { padding: 16px; border-bottom: 1px solid #eee; }
+  .sidebar-header h1 { font-size: 15px; font-weight: 600; color: #0f6e56; }
+  .sidebar-header p { font-size: 12px; color: #888780; margin-top: 4px; }
+  .btn-new {
+    margin: 12px 16px 4px; padding: 9px; border: 1px solid #0f6e56;
+    background: #0f6e56; color: #fff; border-radius: 8px; cursor: pointer; font-size: 13px;
+  }
+  .btn-new:hover { background: #085041; }
+  .session-list { flex: 1; overflow-y: auto; padding: 8px; }
+  .session-item {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 9px 10px; border-radius: 8px; cursor: pointer; font-size: 13px;
+    color: #444; margin-bottom: 2px;
+  }
+  .session-item:hover { background: #e1f5ee; }
+  .session-item.active { background: #0f6e56; color: #fff; }
+  .session-item .title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .session-item .del {
+    visibility: hidden; border: none; background: none; color: inherit;
+    cursor: pointer; font-size: 14px; padding: 0 2px; opacity: .7;
+  }
+  .session-item:hover .del { visibility: visible; }
+  .session-empty { font-size: 12px; color: #b4b2a9; text-align: center; padding: 20px 0; }
+
+  /* ===== 右侧：聊天主区 ===== */
+  .main { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .chat-header { display: flex; align-items: center; justify-content: space-between; }
+  .chat-header .left { font-size: 14px; font-weight: 600; }
+  .chat-header .left span { font-size: 12px; font-weight: 400; color: #888780; margin-left: 8px; }
+  .chat-header .right { display: flex; align-items: center; gap: 10px; }
+  .user-badge { font-size: 12px; color: #0f6e56; background: #e1f5ee; border-radius: 12px; padding: 4px 10px; }
+  .btn-admin { font-size: 12px; color: #185fa5; background: #e6f1fb; border: none; border-radius: 12px; padding: 4px 10px; cursor: pointer; text-decoration: none; }
+  .btn-logout { font-size: 12px; color: #888780; background: none; border: 1px solid #d3d1c7; border-radius: 12px; padding: 4px 10px; cursor: pointer; }
+  .btn-logout:hover { color: #a32d2d; border-color: #f09595; }
+  .messages { flex: 1; overflow-y: auto; padding: 24px; }
+  .msg { max-width: 76%; margin-bottom: 16px; line-height: 1.7; }
+  .msg.user {
+    margin-left: auto; background: #0f6e56; color: #fff;
+    padding: 10px 14px; border-radius: 12px 12px 2px 12px; font-size: 14px;
+  }
+  .msg.assistant { background: #fff; border: 1px solid #e5e5e5; padding: 12px 16px; border-radius: 12px 12px 12px 2px; font-size: 14px; white-space: pre-wrap; }
+  /* 状态条：「正在检索补货制度…」 */
+  .status {
+    display: none; align-items: center; gap: 8px; font-size: 13px;
+    color: #1d9e75; margin-bottom: 12px;
+  }
+  .status.show { display: flex; }
+  .status .dot {
+    width: 8px; height: 8px; border-radius: 50%; background: #1d9e75;
+    animation: blink 1s infinite;
+  }
+  @keyframes blink { 50% { opacity: .25; } }
+  /* 引用来源卡片（回答底部） */
+  .sources {
+    max-width: 76%; margin-bottom: 16px; font-size: 12px;
+  }
+  .sources .card {
+    background: #fafeda; border: 1px solid #efc775; border-radius: 8px;
+    padding: 8px 12px; margin-top: 6px;
+  }
+  .sources .card .src-title { color: #854f0b; font-weight: 600; }
+  .sources .card .src-snippet { color: #633806; margin-top: 3px; }
+  /* 错误提示 */
+  .error {
+    max-width: 76%; margin-bottom: 16px; background: #fcebeb;
+    border: 1px solid #f09595; color: #a32d2d; border-radius: 8px;
+    padding: 10px 14px; font-size: 13px;
+  }
+  /* ===== 工具调用轨迹（智能体执行过程） ===== */
+  .tool-trace {
+    max-width: 76%; margin-bottom: 10px; font-size: 12px;
+    background: #f7f9fc; border: 1px dashed #d3d1c7; border-radius: 8px;
+    padding: 8px 12px; color: #5f5e5a;
+  }
+  .tool-trace .trace-title { font-size: 11px; color: #888780; margin-bottom: 4px; }
+  .tool-trace .trace-line { display: flex; gap: 6px; align-items: flex-start; padding: 2px 0; }
+  .tool-trace .trace-line .ico { width: 14px; flex-shrink: 0; }
+  .tool-trace .trace-line.run .ico { color: #1d9e75; }
+  .tool-trace .trace-line.block .ico { color: #c07417; }
+  .tool-trace .trace-line.fail .ico { color: #a32d2d; }
+  .tool-trace .trace-line .summary { color: #888780; }
+  /* ===== 补货草稿确认卡片 ===== */
+  .draft-card {
+    max-width: 82%; margin-bottom: 16px; background: #fff;
+    border: 1px solid #5dcaa5; border-left: 4px solid #0f6e56;
+    border-radius: 10px; padding: 14px 16px; font-size: 13px;
+  }
+  .draft-card h4 { font-size: 13px; color: #0f6e56; margin-bottom: 8px; }
+  .draft-card .row { display: flex; justify-content: space-between; padding: 3px 0; color: #444441; }
+  .draft-card .row span:first-child { color: #888780; }
+  .draft-card .basis { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #e5e5e5; color: #5f5e5a; font-size: 12px; line-height: 1.6; }
+  .draft-card .actions { display: flex; gap: 8px; margin-top: 12px; }
+  .draft-card button { padding: 7px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; }
+  .draft-card .btn-confirm { background: #0f6e56; color: #fff; }
+  .draft-card .btn-confirm:hover { background: #085041; }
+  .draft-card .btn-cancel { background: #f4f6f9; color: #5f5e5a; border: 1px solid #d3d1c7; }
+  .draft-card .state { margin-top: 10px; font-size: 12px; }
+  .draft-card .state.ok { color: #0f6e56; }
+  .draft-card .state.no { color: #888780; }
+  /* ===== 执行前确认卡（写操作中断）===== */
+  .confirm-card {
+    max-width: 82%; margin-bottom: 16px; background: #fffdf7;
+    border: 1px solid #efc775; border-left: 4px solid #c07417;
+    border-radius: 10px; padding: 14px 16px; font-size: 13px;
+  }
+  .confirm-card h4 { font-size: 13px; color: #854f0b; margin-bottom: 8px; }
+  .confirm-card .row { display: flex; justify-content: space-between; padding: 3px 0; color: #444441; }
+  .confirm-card .row span:first-child { color: #888780; }
+  .confirm-card .checks { margin-top: 8px; padding-top: 8px; border-top: 1px dashed #efc775; }
+  .confirm-card .check { padding: 2px 0; color: #5f5e5a; font-size: 12px; }
+  .confirm-card .check.ok { color: #0f6e56; }
+  .confirm-card .check.no { color: #a32d2d; }
+  .confirm-card .adjust { margin-top: 8px; font-size: 12px; color: #854f0b; background: #fdf3d8; border-radius: 6px; padding: 6px 8px; }
+  .confirm-card .hint { margin-top: 10px; font-size: 12px; color: #888780; line-height: 1.6; }
+  .confirm-card .actions { display: flex; gap: 8px; margin-top: 10px; }
+  .confirm-card button { padding: 7px 16px; border-radius: 8px; font-size: 13px; cursor: pointer; border: none; }
+  .confirm-card .btn-go { background: #c07417; color: #fff; }
+  .confirm-card .btn-go:hover { background: #a35f0d; }
+  .confirm-card .btn-no { background: #f4f6f9; color: #5f5e5a; border: 1px solid #d3d1c7; }
+  .confirm-card button:disabled { opacity: .55; cursor: not-allowed; }
+  .confirm-card .state { margin-top: 8px; font-size: 12px; color: #888780; }
+  .confirm-card .state.ok { color: #0f6e56; }
+  .confirm-card .state.no { color: #a32d2d; }
+  /* ===== 底部输入区 ===== */
+  .quick-row { padding: 0 24px 8px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .quick-btn {
+    padding: 6px 12px; font-size: 12px; border: 1px solid #5dcaa5;
+    background: #e1f5ee; color: #0f6e56; border-radius: 14px; cursor: pointer;
+  }
+  .quick-btn:hover { background: #9fe1cb; }
+  .input-row {
+    display: flex; gap: 10px; padding: 12px 24px 20px; background: #f4f6f9;
+  }
+  .input-row textarea {
+    flex: 1; resize: none; border: 1px solid #d3d1c7; border-radius: 10px;
+    padding: 10px 14px; font-size: 14px; font-family: inherit; height: 46px;
+    outline: none; background: #fff;
+  }
+  .input-row textarea:focus { border-color: #0f6e56; }
+  .btn-send {
+    padding: 0 22px; border: none; background: #0f6e56; color: #fff;
+    border-radius: 10px; cursor: pointer; font-size: 14px;
+  }
+  .btn-send:disabled { background: #b4b2a9; cursor: not-allowed; }
+</style>
+</head>
+<body>
+
+<!-- ===== 左侧栏：会话历史 ===== -->
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <h1>店长问答助手</h1>
+    <p>补货制度 · 智能问答</p>
+  </div>
+  <button class="btn-new" id="btnNew">＋ 新建会话</button>
+  <div class="session-list" id="sessionList">
+    <div class="session-empty">暂无历史会话</div>
+  </div>
+</aside>
+
+<!-- ===== 主区：聊天 ===== -->
+<section class="main">
+  <div class="chat-header">
+    <div class="left">补货制度问答 <span>回答依据制度文档生成，仅供执行参考</span></div>
+    <div class="right">
+      <span class="user-badge" id="userBadge" style="display:none"></span>
+      <a class="btn-admin" id="btnAdmin" href="/admin/audit" style="display:none">管理后台</a>
+      <button class="btn-logout" onclick="logout()">退出</button>
+    </div>
+  </div>
+  <div class="messages" id="messages"></div>
+
+  <!-- 快捷提问按钮（店长高频三问） -->
+  <div class="quick-row">
+    <button class="quick-btn" onclick="askQuick(this)">整箱规格是什么？</button>
+    <button class="quick-btn" onclick="askQuick(this)">促销期间怎么报数？</button>
+    <button class="quick-btn" onclick="askQuick(this)">超过分配上限怎么办？</button>
+    <button class="quick-btn" onclick="askQuick(this)">矿泉水该补多少？</button>
+  </div>
+
+  <div class="input-row">
+    <textarea id="input" placeholder="输入补货制度相关问题，回车发送…" maxlength="500"></textarea>
+    <button class="btn-send" id="btnSend">发送</button>
+  </div>
+</section>
+
+<script>
+/* ============================================================
+ * 认证：token 管理 + 统一请求封装
+ * ============================================================ */
+const TOKEN = localStorage.getItem('token');
+
+/* 统一请求封装：自动携带 JWT；401/403 时跳回登录页 */
+async function apiFetch(url, options = {}) {
+  options.headers = Object.assign({}, options.headers, { 'Authorization': 'Bearer ' + TOKEN });
+  const resp = await fetch(url, options);
+  if (resp.status === 401 || resp.status === 403) {
+    localStorage.removeItem('token');
+    location.href = '/login';
+    throw new Error('unauthorized');
+  }
+  return resp;
+}
+
+/* 页面挂载：校验登录态并显示用户标识 */
+async function initAuth() {
+  if (!TOKEN) { location.href = '/login'; return false; }
+  try {
+    const resp = await apiFetch('/api/me');
+    const data = await resp.json();
+    const u = data.user;
+    const badge = document.getElementById('userBadge');
+    badge.style.display = '';
+    badge.textContent = u.role === 'admin'
+      ? u.sub + '（总部管理员）'
+      : u.sub + '（' + (u.store_name || '门店') + '）';
+    if (u.role === 'admin') document.getElementById('btnAdmin').style.display = '';
+    return true;
+  } catch (e) { return false; }
+}
+function logout() {
+  localStorage.removeItem('token');
+  location.href = '/login';
+}
+
+/* ============================================================
+ * 全局状态
+ * ============================================================ */
+let currentSessionId = null;   // 当前会话 ID（null = 新会话，首次回答后由 done 事件回填）
+let busy = false;              // 是否正在等待回答（防重复发送）
+
+const $messages = document.getElementById('messages');
+const $input = document.getElementById('input');
+const $btnSend = document.getElementById('btnSend');
+const $sessionList = document.getElementById('sessionList');
+
+/* ============================================================
+ * 工具函数
+ * ============================================================ */
+function escapeHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+function scrollBottom() { $messages.scrollTop = $messages.scrollHeight; }
+
+function addUserMsg(text) {
+  const div = document.createElement('div');
+  div.className = 'msg user';
+  div.textContent = text;
+  $messages.appendChild(div); scrollBottom();
+}
+function addAssistantMsg() {
+  const div = document.createElement('div');
+  div.className = 'msg assistant';
+  $messages.appendChild(div); scrollBottom();
+  return div;
+}
+/* 显示状态条（「正在检索补货制度…」/「正在生成回答…」） */
+let $status = null;
+function showStatus(text) {
+  hideStatus();
+  $status = document.createElement('div');
+  $status.className = 'status show';
+  $status.innerHTML = '<span class="dot"></span><span></span>';
+  $status.lastChild.textContent = text;
+  $messages.appendChild($status); scrollBottom();
+}
+function hideStatus() { if ($status) { $status.remove(); $status = null; } }
+
+/* 展示引用来源卡片：《文档名》·「章节」+ 原文片段 */
+function addSources(sources) {
+  if (!sources || !sources.length) return;
+  const wrap = document.createElement('div');
+  wrap.className = 'sources';
+  wrap.innerHTML = '<div style="color:#888780">引用来源：</div>';
+  sources.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = '<div class="src-title"></div><div class="src-snippet"></div>';
+    card.querySelector('.src-title').textContent = '《' + s.doc + '》·「' + s.section + '」';
+    card.querySelector('.src-snippet').textContent = s.snippet;
+    wrap.appendChild(card);
+  });
+  $messages.appendChild(wrap); scrollBottom();
+}
+
+/* 展示错误（后端约定的中文错误信息） */
+function addError(code, message) {
+  const div = document.createElement('div');
+  div.className = 'error';
+  div.textContent = '出错了（' + code + '）：' + message;
+  $messages.appendChild(div); scrollBottom();
+}
+
+/* ============================================================
+ * 智能体执行轨迹 + 补货草稿卡片
+ * ============================================================ */
+let activeTraceEl = null;      // 本次回答的工具轨迹容器
+let pendingToolLines = [];     // 已发出 running、尚未收到 done 的工具行
+
+function resetTrace() { activeTraceEl = null; pendingToolLines = []; }
+
+function traceFor(bubble) {
+  if (!activeTraceEl) {
+    activeTraceEl = document.createElement('div');
+    activeTraceEl.className = 'tool-trace';
+    activeTraceEl.innerHTML = '<div class="trace-title">智能体执行步骤</div>';
+    $messages.insertBefore(activeTraceEl, bubble);   // 轨迹放在回答气泡上方
+  }
+  return activeTraceEl;
+}
+
+/* 工具事件：running → 插一行「正在…」；done → 改成 ✓ / !（阻断）/ ✕（失败）并附摘要 */
+function onToolEvent(data, bubble) {
+  const el = traceFor(bubble);
+  if (data.state === 'running') {
+    const line = document.createElement('div');
+    line.className = 'trace-line run';
+    line.dataset.name = data.name;
+    line.innerHTML = '<span class="ico">●</span><span class="txt"></span>';
+    line.querySelector('.txt').textContent = data.label + '…';
+    el.appendChild(line);
+    pendingToolLines.push(line);
+    scrollBottom();
+    return;
+  }
+  const line = pendingToolLines.find(l => l.dataset.name === data.name);
+  if (!line) return;
+  pendingToolLines.splice(pendingToolLines.indexOf(line), 1);
+  const cls = !data.ok ? 'fail' : (data.blocking ? 'block' : 'ok');
+  line.className = 'trace-line ' + cls;
+  line.querySelector('.ico').textContent = !data.ok ? '✕' : (data.blocking ? '!' : '✓');
+  line.querySelector('.txt').textContent = data.label;
+  if (data.summary) {
+    const sum = document.createElement('span');
+    sum.className = 'summary';
+    sum.textContent = '· ' + data.summary;
+    line.appendChild(sum);
+  }
+  scrollBottom();
+}
+
+/* 草稿卡片：模型只能建草稿，提交必须由店长点按钮 */
+function addDraftCard(d) {
+  const b = d.basis || {};
+  const inv = b.inventory || {};
+  const sale = b.sales || {};
+  const pol = b.policy || {};
+  const del = b.delivery || {};
+
+  const card = document.createElement('div');
+  card.className = 'draft-card';
+  card.id = 'draft-' + d.id;
+  card.innerHTML =
+    '<h4></h4>' +
+    '<div class="row"><span>商品</span><span class="v-sku"></span></div>' +
+    '<div class="row"><span>申请数量</span><span class="v-qty"></span></div>' +
+    '<div class="row"><span>配送日</span><span class="v-date"></span></div>' +
+    '<div class="row"><span>可售库存 / 系统库存</span><span class="v-inv"></span></div>' +
+    '<div class="row"><span>近 30 天销量 / 日均</span><span class="v-sale"></span></div>' +
+    '<div class="row"><span>制度参数</span><span class="v-pol"></span></div>' +
+    '<div class="row"><span>线路余量</span><span class="v-line"></span></div>' +
+    '<div class="basis"></div>' +
+    '<div class="actions">' +
+    '  <button class="btn-confirm">确认提交（进入审批）</button>' +
+    '  <button class="btn-cancel">撤回草稿</button>' +
+    '</div>' +
+    '<div class="state"></div>';
+
+  card.querySelector('h4').textContent = '补货申请草稿 #' + d.id + '（需你确认后才会提交）';
+  card.querySelector('.v-sku').textContent = d.sku + ' ' + (d.sku_name || '');
+  card.querySelector('.v-qty').textContent = d.qty + ' ' + (d.unit || '件') +
+    (d.boxes ? '（' + d.boxes + ' 箱）' : '');
+  card.querySelector('.v-date').textContent = d.delivery_date || '-';
+  card.querySelector('.v-inv').textContent = (inv.sellable_qty ?? '-') + ' / ' + (inv.sys_qty ?? '-') +
+    '（后仓 ' + (inv.backroom_qty ?? 0) + '，货架 ' + (inv.shelf_qty ?? 0) + '）';
+  card.querySelector('.v-sale').textContent = (sale.total ?? '-') + ' / ' + (sale.avg_daily ?? '-');
+  card.querySelector('.v-pol').textContent = '起订 ' + (pol.moq ?? '-') + '，整箱 ' +
+    (pol.spec || pol.box_size || '-') + '，上限 ' + (pol.alloc_cap ?? '-');
+  card.querySelector('.v-line').textContent = (del.line || '-') + '，余量 ' + (del.remaining_capacity ?? '-') + ' 件';
+  card.querySelector('.basis').textContent =
+    '分配依据：' + (b.reason || '制度校验通过后生成') +
+    '；未满足数量 ' + (b.unsatisfied ?? 0) + ' 件' +
+    (b.promotion ? '；促销版本 ' + b.promotion.version + '（已确认）' : '');
+
+  card.querySelector('.btn-confirm').onclick = () => submitDraft(d.id, card);
+  card.querySelector('.btn-cancel').onclick = () => cancelDraft(d.id, card);
+
+  // 历史草稿（已提交/已撤回）：不显示操作按钮
+  if (d.status && d.status !== 'draft') {
+    const st = card.querySelector('.state');
+    st.className = 'state ok';
+    st.textContent = d.status === 'submitted'
+      ? '✔ 已提交（' + (d.submitted_at || '') + '）'
+      : '已撤回 / 失效';
+    card.querySelector('.actions').remove();
+  }
+
+  $messages.appendChild(card);
+  scrollBottom();
+}
+
+async function submitDraft(id, card) {
+  const state = card.querySelector('.state');
+  const resp = await apiFetch('/api/drafts/' + id + '/submit', { method: 'POST' });
+  const data = await resp.json();
+  if (resp.ok) {
+    state.className = 'state ok';
+    state.textContent = '✔ ' + (data.message || '已提交');
+    card.querySelector('.actions').remove();
+  } else {
+    state.className = 'state no';
+    state.textContent = '✕ ' + (data.message || '提交失败');
+  }
+}
+
+async function cancelDraft(id, card) {
+  const state = card.querySelector('.state');
+  const resp = await apiFetch('/api/drafts/' + id + '/cancel', { method: 'POST' });
+  const data = await resp.json();
+  state.className = 'state no';
+  state.textContent = resp.ok ? '已撤回，未提交' : '✕ ' + (data.message || '操作失败');
+  if (resp.ok) card.querySelector('.actions').remove();
+}
+
+/* ============================================================
+ * 核心流程：发送问题 → 解析 SSE 流 → 打字机渲染
+ * 浏览器原生 EventSource 只支持 GET，所以用 fetch + ReadableStream
+ * ============================================================ */
+async function ask(question) {
+  if (busy || !question) return;
+  busy = true; $btnSend.disabled = true; $input.value = '';
+  addUserMsg(question);
+  resetTrace();                          // 每次提问重置工具轨迹
+
+  const bubble = addAssistantMsg();      // 回答气泡（流式填充 = 打字机效果）
+  let answer = '';
+
+  try {
+    const resp = await apiFetch('/chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ session_id: currentSessionId, question: question })
+    });
+
+    // ---- 建流前错误 / 流式渲染统一交给 readSSE ----
+    await readSSE(resp, bubble);
+  } catch (e) {
+    addError('NETWORK_ERROR', '网络异常，请检查服务是否已启动');
+  } finally {
+    hideStatus();
+    busy = false; $btnSend.disabled = false;
+    if (currentSessionId) loadSessions();   // 新会话首次回答后刷新侧栏
+  }
+}
+
+/* ============================================================
+ * SSE 读取：首次提问（/chat）与人工确认后继续（/api/agent/confirm）共用
+ * 浏览器原生 EventSource 只支持 GET，所以用 fetch + ReadableStream 手写解析
+ * ============================================================ */
+async function readSSE(resp, bubble) {
+  const ctype = resp.headers.get('content-type') || '';
+  if (!resp.ok || !ctype.includes('event-stream')) {
+    let e = { code: 'HTTP_' + resp.status, message: '请求失败' };
+    try { e = await resp.json(); } catch (_) {}
+    addError(e.code, e.message);
+    return;
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = '';
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+
+    // SSE 事件以空行（\n\n）分隔
+    let idx;
+    while ((idx = buf.indexOf('\n\n')) >= 0) {
+      const block = buf.slice(0, idx); buf = buf.slice(idx + 2);
+      let event = 'message', data = '';
+      block.split('\n').forEach(line => {
+        if (line.startsWith('event:')) event = line.slice(6).trim();
+        else if (line.startsWith('data:')) data += line.slice(5).trim();
+      });
+      if (!data) continue;
+      handleEvent(event, JSON.parse(data), bubble);
+    }
+  }
+}
+
+/* SSE 事件分发 */
+function handleEvent(event, data, bubble) {
+  if (event === 'status') {
+    showStatus(data.message);              // 「正在核对…」「第 2/5 轮…」
+  } else if (event === 'tool') {
+    hideStatus();
+    onToolEvent(data, bubble);             // 智能体工具调用轨迹
+  } else if (event === 'delta') {
+    hideStatus();
+    bubble.textContent += data.content;    // 追加片段 → 打字机效果
+    scrollBottom();
+  } else if (event === 'confirm_required') {
+    // 【关键】写操作在执行前被框架挂起，这里渲染确认卡。
+    // 用户点「确认」之前，系统里没有产生任何草稿。
+    hideStatus();
+    addConfirmCard(data);
+  } else if (event === 'draft') {
+    hideStatus();
+    addDraftCard(data.draft);              // 草稿已创建，等待「确认提交」
+  } else if (event === 'sources') {
+    addSources(data.sources);              // 回答底部引用来源
+  } else if (event === 'done') {
+    if (data.session_id) currentSessionId = data.session_id;   // 新会话回填 ID
+  } else if (event === 'error') {
+    addError(data.code, data.message);     // 流内中文错误
+  }
+}
+
+/* ============================================================
+ * 执行前确认卡：展示「将要写入的草稿内容」，确认后才真正执行
+ * ============================================================ */
+function addConfirmCard(data) {
+  const p = data.preview || {};
+  const card = document.createElement('div');
+  card.className = 'confirm-card';
+  card.innerHTML =
+    '<h4>待确认 · 补货申请草稿（尚未写入系统）</h4>' +
+    '<div class="row"><span>商品</span><span class="v-sku"></span></div>' +
+    '<div class="row"><span>申请数量</span><span class="v-qty"></span></div>' +
+    '<div class="row"><span>整箱换算</span><span class="v-box"></span></div>' +
+    '<div class="row"><span>预计配送日</span><span class="v-date"></span></div>' +
+    '<div class="row"><span>配送线路</span><span class="v-line"></span></div>' +
+    '<div class="checks"></div>' +
+    '<div class="adjust" style="display:none"></div>' +
+    '<div class="hint">确认后才会写入补货草稿；草稿仍需你点一次「确认提交」才会进入总部审批。</div>' +
+    '<div class="actions">' +
+    '  <button class="btn-go">确认并生成草稿</button>' +
+    '  <button class="btn-no">取消</button>' +
+    '</div>' +
+    '<div class="state"></div>';
+
+  card.querySelector('.v-sku').textContent = p.sku + ' ' + (p.sku_name || '') +
+    (p.spec ? '（' + p.spec + '）' : '');
+  card.querySelector('.v-qty').textContent = p.qty_text || (p.qty + ' ' + (p.unit || '件'));
+  card.querySelector('.v-box').textContent = p.box_text || '-';
+  card.querySelector('.v-date').textContent = (p.delivery_date || '-') +
+    (p.delivery_weekday ? '（' + p.delivery_weekday + '）' : '');
+  card.querySelector('.v-line').textContent = (p.line_name || '-') + '，余量 ' +
+    (p.line_remaining ?? '-') + ' 件';
+
+  (p.checks || []).forEach(c => {
+    const row = document.createElement('div');
+    row.className = 'check ' + (c.ok ? 'ok' : 'no');
+    row.textContent = (c.ok ? '✓ ' : '✕ ') + c.name + '：' + c.detail;
+    card.querySelector('.checks').appendChild(row);
+  });
+
+  if (p.adjust) {
+    const a = p.adjust;
+    const box = card.querySelector('.adjust');
+    box.style.display = '';
+    box.textContent = '↻ 已按制度调整：原申请 ' + a.from_qty + ' 件（' + a.from_boxes +
+      ' 箱）→ ' + a.to_qty + ' 件（' + a.to_boxes + ' 箱）。原因：' + a.reason;
+  }
+
+  card.querySelector('.btn-go').onclick = () =>
+    decideAction(data.run_id, data.action_id, 'confirm', card);
+  card.querySelector('.btn-no').onclick = () =>
+    decideAction(data.run_id, data.action_id, 'cancel', card);
+
+  $messages.appendChild(card);
+  scrollBottom();
+}
+
+/* 确认 / 取消：后端从断点恢复，返回的仍是 SSE 流 */
+async function decideAction(runId, actionId, decision, card) {
+  const state = card.querySelector('.state');
+  card.querySelectorAll('button').forEach(b => b.disabled = true);
+  state.className = 'state';
+  state.textContent = decision === 'confirm' ? '正在创建草稿…' : '正在取消…';
+
+  let resp;
+  try {
+    resp = await apiFetch('/api/agent/confirm', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ run_id: runId, action_id: actionId, decision: decision })
+    });
+  } catch (e) {
+    state.className = 'state no';
+    state.textContent = '✕ 网络异常，请重试';
+    card.querySelectorAll('button').forEach(b => b.disabled = false);
+    return;
+  }
+
+  state.className = 'state ok';
+  state.textContent = decision === 'confirm' ? '✔ 已确认，正在执行…' : '已取消';
+  card.querySelector('.actions').remove();
+
+  // 续接一条新的回答气泡，继续用同一套 SSE 渲染
+  resetTrace();
+  const bubble = addAssistantMsg();
+  busy = true; $btnSend.disabled = true;
+  try {
+    await readSSE(resp, bubble);
+  } catch (e) {
+    addError('NETWORK_ERROR', '续接失败，请刷新页面查看结果');
+  } finally {
+    hideStatus();
+    busy = false; $btnSend.disabled = false;
+    if (currentSessionId) loadSessions();
+  }
+}
+
+/* 快捷提问按钮 */
+function askQuick(btn) { ask(btn.textContent.trim()); }
+
+/* ============================================================
+ * 会话侧栏：加载列表 / 切换 / 删除 / 新建
+ * ============================================================ */
+async function loadSessions() {
+  const resp = await apiFetch('/sessions');
+  const data = await resp.json();
+  $sessionList.innerHTML = '';
+  if (!data.sessions.length) {
+    $sessionList.innerHTML = '<div class="session-empty">暂无历史会话</div>';
+    return;
+  }
+  data.sessions.forEach(s => {
+    const item = document.createElement('div');
+    item.className = 'session-item' + (s.id === currentSessionId ? ' active' : '');
+    item.innerHTML = '<span class="title"></span><button class="del" title="删除">✕</button>';
+    item.querySelector('.title').textContent = s.title || s.id;
+    item.onclick = ev => { if (ev.target.className !== 'del') switchSession(s.id); };
+    item.querySelector('.del').onclick = () => deleteSession(s.id);
+    $sessionList.appendChild(item);
+  });
+}
+
+/* 切换会话：加载历史消息（含引用来源） */
+async function switchSession(id) {
+  if (busy) return;
+  currentSessionId = id;
+  $messages.innerHTML = '';
+  const resp = await apiFetch('/sessions/' + id + '/messages');
+  const data = await resp.json();
+  (data.messages || []).forEach(m => {
+    addUserMsg2(m.content, m.role);
+    if (m.sources) addSources(m.sources);
+  });
+  // 该会话的补货草稿（含已提交状态，不可再操作）
+  try {
+    const dResp = await apiFetch('/api/drafts?session_id=' + id);
+    const dd = await dResp.json();
+    (dd.drafts || []).forEach(d => { d.qty = d.qty_suggested; addDraftCard(d); });
+  } catch (_) {}
+  // 该会话里「已中断、还没确认」的写操作（刷新页面后仍能继续确认）
+  try {
+    const pResp = await apiFetch('/api/agent/pending?session_id=' + id);
+    const pd = await pResp.json();
+    (pd.actions || []).forEach(a => addConfirmCard({
+      run_id: a.run_id, action_id: a.id, preview: a.preview
+    }));
+  } catch (_) {}
+  loadSessions();
+  scrollBottom();
+}
+/* 按 role 渲染历史消息（user 绿色 / assistant 白色） */
+function addUserMsg2(text, role) {
+  const div = document.createElement('div');
+  div.className = 'msg ' + role;
+  div.textContent = text;
+  $messages.appendChild(div);
+}
+
+async function deleteSession(id) {
+  if (!confirm('确定删除该会话吗？')) return;
+  if (id === currentSessionId) { currentSessionId = null; $messages.innerHTML = ''; }
+  await apiFetch('/sessions/' + id, { method: 'DELETE' });
+  loadSessions();
+}
+
+document.getElementById('btnNew').onclick = () => {
+  if (busy) return;
+  currentSessionId = null;
+  $messages.innerHTML = '';
+  loadSessions();
+};
+
+/* ============================================================
+ * 输入框：回车发送 / 按钮发送
+ * ============================================================ */
+$btnSend.onclick = () => ask($input.value.trim());
+$input.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); ask($input.value.trim()); }
+});
+
+/* 页面加载：先校验登录态，再拉会话列表 */
+initAuth().then(ok => { if (ok) loadSessions(); });
+</script>
+</body>
+</html>
