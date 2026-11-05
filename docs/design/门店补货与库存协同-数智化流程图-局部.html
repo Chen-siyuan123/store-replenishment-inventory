@@ -46,6 +46,12 @@
   <span><i class="dot" style="background:#FCEBEB;border-color:#D85A30"></i>停止条件 / 硬约束</span>
 </div>
 
+<div class="legend" style="margin-top:9px;gap:26px;border-top:1px dashed #D3D1C7;padding-top:9px;">
+  <span><b style="color:#2C7A4B;font-size:13px;">●</b> 已实现（原型可演示）</span>
+  <span><b style="color:#B5790F;font-size:13px;">◐</b> 部分实现（有结构或校验，治理/执行未做）</span>
+  <span><b style="color:#8A8A8A;font-size:13px;">○</b> 试点后规划（目标态，当前未建）</span>
+</div>
+
 <div class="canvas">
 <svg viewBox="0 0 1000 2130" role="img" xmlns="http://www.w3.org/2000/svg">
 <title>门店补货与库存协同数智化流程图（局部）</title>
@@ -65,30 +71,30 @@
 <rect x="20" y="10" width="960" height="238" rx="12" fill="#EFEBFA" opacity="0.45"/>
 <rect x="32" y="22" width="120" height="24" rx="5" fill="#CBC0EE"/>
 <text x="92" y="34" font-size="12.5" font-weight="500" fill="#3A2875" text-anchor="middle" dominant-baseline="central">数据治理层（前置）</text>
-<text x="164" y="34" font-size="11.5" fill="#5A48A6" dominant-baseline="central"> REQ-1 · 口径不统一则预测分母错误</text>
+<text x="164" y="34" font-size="11.5" fill="#5A48A6" dominant-baseline="central"> REQ-1 · 口径不统一则预测分母错误<tspan fill="#B5790F"> · ◐ 部分实现</tspan></text>
 
 <rect x="52" y="62" width="200" height="70" rx="6" fill="#F3F0FC" stroke="#7F6DD6" stroke-width="0.7"/>
-<text x="152" y="84" font-size="12.5" fill="#241457" text-anchor="middle" dominant-baseline="central">编码归并</text>
+<text x="152" y="84" font-size="12.5" fill="#241457" text-anchor="middle" dominant-baseline="central"><tspan fill="#B5790F">◐ </tspan>编码归并</text>
 <text x="152" y="102" font-size="11" fill="#5A48A6" text-anchor="middle" dominant-baseline="central">按主编号归并新旧码 / 套装码</text>
 <text x="152" y="120" font-size="10" fill="#888780" text-anchor="middle" dominant-baseline="central">f30 · 秦芮出字段清单</text>
 
 <rect x="286" y="62" width="200" height="70" rx="6" fill="#F3F0FC" stroke="#7F6DD6" stroke-width="0.7"/>
-<text x="386" y="84" font-size="12.5" fill="#241457" text-anchor="middle" dominant-baseline="central">缺货标识口径统一</text>
+<text x="386" y="84" font-size="12.5" fill="#241457" text-anchor="middle" dominant-baseline="central"><tspan fill="#B5790F">◐ </tspan>缺货标识口径统一</text>
 <text x="386" y="102" font-size="11" fill="#5A48A6" text-anchor="middle" dominant-baseline="central">区分「有货」与「可售」</text>
 <text x="386" y="120" font-size="10" fill="#888780" text-anchor="middle" dominant-baseline="central">f10 / f12 · 账实差异约 8%</text>
 
 <rect x="520" y="62" width="200" height="70" rx="6" fill="#F3F0FC" stroke="#7F6DD6" stroke-width="0.7"/>
-<text x="620" y="84" font-size="12.5" fill="#241457" text-anchor="middle" dominant-baseline="central">促销版本结构化</text>
+<text x="620" y="84" font-size="12.5" fill="#241457" text-anchor="middle" dominant-baseline="central"><tspan fill="#B5790F">◐ </tspan>促销版本结构化</text>
 <text x="620" y="102" font-size="11" fill="#5A48A6" text-anchor="middle" dominant-baseline="central">临时变价 / 促销日历入库</text>
 <text x="620" y="120" font-size="10" fill="#888780" text-anchor="middle" dominant-baseline="central">f11 / f14 / f21 · REQ-3</text>
 
 <rect x="754" y="62" width="196" height="70" rx="6" fill="#F3F0FC" stroke="#7F6DD6" stroke-width="0.7"/>
-<text x="852" y="84" font-size="12.5" fill="#241457" text-anchor="middle" dominant-baseline="central">数据校验与刷新</text>
+<text x="852" y="84" font-size="12.5" fill="#241457" text-anchor="middle" dominant-baseline="central"><tspan fill="#8A8A8A">○ </tspan>数据校验与刷新</text>
 <text x="852" y="102" font-size="11" fill="#5A48A6" text-anchor="middle" dominant-baseline="central">主编号 / 事件时间 / 来源 / 版本</text>
 <text x="852" y="120" font-size="10" fill="#888780" text-anchor="middle" dominant-baseline="central">f33 / f34 · 每天两次刷新</text>
 
 <rect x="52" y="158" width="898" height="66" rx="6" fill="#FCEBEB" stroke="#D85A30" stroke-width="0.7"/>
-<text x="501" y="178" font-size="12" font-weight="500" fill="#791F1F" text-anchor="middle" dominant-baseline="central">硬约束：关键字段缺失进入人工修复队列，不用猜测值补齐；销量为零须识别「缺货截断」，不得当真实需求建模（f31 / f33）</text>
+<text x="501" y="178" font-size="12" font-weight="500" fill="#791F1F" text-anchor="middle" dominant-baseline="central"><tspan fill="#2C7A4B">● </tspan>硬约束：关键字段缺失进入人工修复队列，不用猜测值补齐；销量为零须识别「缺货截断」，不得当真实需求建模（f31 / f33）</text>
 <text x="501" y="200" font-size="11" fill="#A32D2D" text-anchor="middle" dominant-baseline="central">顾客个人交易记录不进入预测，仅用聚合的商品与门店数据（f41）</text>
 
 <path d="M501 248 L501 290" stroke="#5F5E5A" stroke-width="1.3" marker-end="url(#a)"/>
@@ -98,14 +104,14 @@
 <rect x="20" y="292" width="960" height="500" rx="12" fill="#E6F1FB" opacity="0.45"/>
 <rect x="32" y="304" width="140" height="24" rx="5" fill="#B5D4F4"/>
 <text x="102" y="316" font-size="12.5" font-weight="500" fill="#0C447C" text-anchor="middle" dominant-baseline="central">AI 补货建议生成</text>
-<text x="184" y="316" font-size="11.5" fill="#185FA5" dominant-baseline="central"> 系统 / AI 自动处理 · 每天 06:00 / 18:00 两次</text>
+<text x="184" y="316" font-size="11.5" fill="#185FA5" dominant-baseline="central"> 系统 / AI 自动处理 · 每天 06:00 / 18:00 两次<tspan fill="#B5790F"> · ◐ 当前为店长提问触发，未做定时</tspan></text>
 
 <rect x="352" y="334" width="296" height="58" rx="6" fill="#D9E8FB" stroke="#378ADD" stroke-width="0.7"/>
-<text x="500" y="356" font-size="13" fill="#042C53" text-anchor="middle" dominant-baseline="central">AI 销量预测（聚合数据）</text>
+<text x="500" y="356" font-size="13" fill="#042C53" text-anchor="middle" dominant-baseline="central"><tspan fill="#B5790F">◐ </tspan>AI 销量预测（聚合数据）</text>
 <text x="500" y="376" font-size="11" fill="#185FA5" text-anchor="middle" dominant-baseline="central">输入：POS 日销 + WMS 出库 + 促销版本 + 节假日客流</text>
 
 <rect x="352" y="424" width="296" height="76" rx="6" fill="#D9E8FB" stroke="#378ADD" stroke-width="0.7"/>
-<text x="500" y="448" font-size="13" fill="#042C53" text-anchor="middle" dominant-baseline="central">补货建议量计算</text>
+<text x="500" y="448" font-size="13" fill="#042C53" text-anchor="middle" dominant-baseline="central"><tspan fill="#2C7A4B">● </tspan>补货建议量计算</text>
 <text x="500" y="468" font-size="11" fill="#185FA5" text-anchor="middle" dominant-baseline="central">内嵌约束：最小起订量 / 整箱规格 / 仓库分配上限</text>
 <text x="500" y="486" font-size="11" fill="#185FA5" text-anchor="middle" dominant-baseline="central">配送日历（周一三五）+ 线路容量（f20 / f50）</text>
 
@@ -115,18 +121,18 @@
 <path d="M500 546 L500 566" stroke="#5F5E5A" stroke-width="1.3"/>
 
 <path d="M500 566 L640 614 L500 662 L360 614 Z" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.7"/>
-<text x="500" y="606" font-size="12.5" font-weight="500" fill="#412402" text-anchor="middle" dominant-baseline="central">触发停止条件？</text>
+<text x="500" y="606" font-size="12.5" font-weight="500" fill="#412402" text-anchor="middle" dominant-baseline="central"><tspan fill="#B5790F">◐ </tspan>触发停止条件？</text>
 <text x="500" y="626" font-size="11" fill="#854F0B" text-anchor="middle" dominant-baseline="central">促销未结构化 / 缺货截断 / 账实不一致 / 依据缺失 / 系统不可用</text>
 
 <rect x="716" y="578" width="240" height="76" rx="6" fill="#FCEBEB" stroke="#D85A30" stroke-width="0.8"/>
-<text x="836" y="598" font-size="12.5" font-weight="500" fill="#791F1F" text-anchor="middle" dominant-baseline="central">停止自动建议（f44）</text>
+<text x="836" y="598" font-size="12.5" font-weight="500" fill="#791F1F" text-anchor="middle" dominant-baseline="central"><tspan fill="#2C7A4B">● </tspan>停止自动建议（f44）</text>
 <text x="836" y="618" font-size="11" fill="#A32D2D" text-anchor="middle" dominant-baseline="central">标明原因 + 具名接手人 + 人工确认时间</text>
 <text x="836" y="636" font-size="10" fill="#888780" text-anchor="middle" dominant-baseline="central">判定责任人与日志字段清单待确认</text>
 
 <path d="M640 614 L716 614" stroke="#D85A30" stroke-width="1.2" stroke-dasharray="4 3" marker-end="url(#a)"/>
 
 <rect x="70" y="580" width="250" height="72" rx="6" fill="#F3F0FC" stroke="#7F6DD6" stroke-width="0.7"/>
-<text x="195" y="602" font-size="12.5" fill="#241457" text-anchor="middle" dominant-baseline="central">全量审核日志（f45）</text>
+<text x="195" y="602" font-size="12.5" fill="#241457" text-anchor="middle" dominant-baseline="central"><tspan fill="#2C7A4B">● </tspan>全量审核日志（f45）</text>
 <text x="195" y="622" font-size="11" fill="#5A48A6" text-anchor="middle" dominant-baseline="central">记录建议内容 / 数据版本 / 人工修正 / 签核人</text>
 <text x="195" y="640" font-size="10" fill="#888780" text-anchor="middle" dominant-baseline="central">日志可重建当次处理 · 试点留痕 90 天（f43）</text>
 
@@ -136,17 +142,17 @@
 <rect x="20" y="812" width="960" height="410" rx="12" fill="#EAF3DE" opacity="0.5"/>
 <rect x="32" y="824" width="150" height="24" rx="5" fill="#C0DD97"/>
 <text x="107" y="836" font-size="12.5" font-weight="500" fill="#27500A" text-anchor="middle" dominant-baseline="central">人工复核确认层</text>
-<text x="196" y="836" font-size="11.5" fill="#3B6D11" dominant-baseline="central"> 补货计划员 唐映秋 · 傅景风险否决</text>
+<text x="196" y="836" font-size="11.5" fill="#3B6D11" dominant-baseline="central"> 补货计划员 唐映秋 · 傅景风险否决<tspan fill="#8A8A8A"> · ○ 计划员/区域经理角色未建，当前由店长在确认卡完成</tspan></text>
 
 <path d="M500 662 L500 870" stroke="#5F5E5A" stroke-width="1.3"/>
 <text x="512" y="700" font-size="11" fill="#3B6D11">否 → 进入人工复核</text>
 
 <path d="M500 870 L625 920 L500 970 L375 920 Z" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.7"/>
-<text x="500" y="912" font-size="12.5" font-weight="500" fill="#412402" text-anchor="middle" dominant-baseline="central">建议量可直接采用？</text>
+<text x="500" y="912" font-size="12.5" font-weight="500" fill="#412402" text-anchor="middle" dominant-baseline="central"><tspan fill="#8A8A8A">○ </tspan>建议量可直接采用？</text>
 <text x="500" y="932" font-size="11" fill="#854F0B" text-anchor="middle" dominant-baseline="central">唐映秋比对历史人工调整量并记录原因（REQ-2）</text>
 
 <rect x="120" y="884" width="210" height="72" rx="6" fill="#EAF3DE" stroke="#639922" stroke-width="0.7"/>
-<text x="225" y="906" font-size="12.5" fill="#173404" text-anchor="middle" dominant-baseline="central">人工调整建议量</text>
+<text x="225" y="906" font-size="12.5" fill="#173404" text-anchor="middle" dominant-baseline="central"><tspan fill="#B5790F">◐ </tspan>人工调整建议量</text>
 <text x="225" y="926" font-size="11" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">调整原因写入日志，修正留痕</text>
 <text x="225" y="944" font-size="10" fill="#888780" text-anchor="middle" dominant-baseline="central">未经确认的结果不覆盖原记录（f15）</text>
 
@@ -155,11 +161,11 @@
 <text x="512" y="994" font-size="11" fill="#3B6D11">确认采用</text>
 
 <path d="M500 1010 L640 1058 L500 1106 L360 1058 Z" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.7"/>
-<text x="500" y="1050" font-size="12.5" font-weight="500" fill="#412402" text-anchor="middle" dominant-baseline="central">超出计划员权限？</text>
+<text x="500" y="1050" font-size="12.5" font-weight="500" fill="#412402" text-anchor="middle" dominant-baseline="central"><tspan fill="#8A8A8A">○ </tspan>超出计划员权限？</text>
 <text x="500" y="1070" font-size="11" fill="#854F0B" text-anchor="middle" dominant-baseline="central">如跨店调拨（f22）</text>
 
 <rect x="716" y="1022" width="240" height="72" rx="6" fill="#EAF3DE" stroke="#639922" stroke-width="0.7"/>
-<text x="836" y="1044" font-size="12.5" fill="#173404" text-anchor="middle" dominant-baseline="central">区域经理审批</text>
+<text x="836" y="1044" font-size="12.5" fill="#173404" text-anchor="middle" dominant-baseline="central"><tspan fill="#8A8A8A">○ </tspan>区域经理审批</text>
 <text x="836" y="1064" font-size="11" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">明确处理人 / 截止时间 / 退回原因（f25）</text>
 <text x="836" y="1082" font-size="10" fill="#888780" text-anchor="middle" dominant-baseline="central">超时由运营总监协调</text>
 
@@ -169,23 +175,23 @@
 <rect x="20" y="1242" width="960" height="360" rx="12" fill="#FAEEDA" opacity="0.42"/>
 <rect x="32" y="1254" width="150" height="24" rx="5" fill="#FAC775"/>
 <text x="107" y="1266" font-size="12.5" font-weight="500" fill="#6B4205" text-anchor="middle" dominant-baseline="central">仓库分配与配送</text>
-<text x="196" y="1266" font-size="11.5" fill="#93610E" dominant-baseline="central"> 区域物流经理 叶书 · 不改供应商合同（f52）</text>
+<text x="196" y="1266" font-size="11.5" fill="#93610E" dominant-baseline="central"> 区域物流经理 叶书 · 不改供应商合同（f52）<tspan fill="#B5790F"> · ◐ 部分实现</tspan></text>
 
 <path d="M500 1106 L500 1150 M500 1150 L500 1290" stroke="#639922" stroke-width="1.3"/>
 <path d="M500 1150 L500 1290" stroke="#5F5E5A" stroke-width="1.3" marker-end="url(#a)"/>
 
 <rect x="352" y="1290" width="296" height="62" rx="6" fill="#FAF0DA" stroke="#BA7517" stroke-width="0.7"/>
-<text x="500" y="1312" font-size="13" fill="#412402" text-anchor="middle" dominant-baseline="central">仓库分配（系统执行）</text>
+<text x="500" y="1312" font-size="13" fill="#412402" text-anchor="middle" dominant-baseline="central"><tspan fill="#B5790F">◐ </tspan>仓库分配（系统执行）</text>
 <text x="500" y="1332" font-size="11" fill="#93610E" text-anchor="middle" dominant-baseline="central">按确认建议量分配 · 同步「未满足数量」与原因</text>
 
 <path d="M500 1352 L500 1386" stroke="#BA7517" stroke-width="1.3" marker-end="url(#a)"/>
 
 <rect x="352" y="1386" width="296" height="62" rx="6" fill="#FAF0DA" stroke="#BA7517" stroke-width="0.7"/>
-<text x="500" y="1408" font-size="13" fill="#412402" text-anchor="middle" dominant-baseline="central">配送执行（周一 / 三 / 五）</text>
+<text x="500" y="1408" font-size="13" fill="#412402" text-anchor="middle" dominant-baseline="central"><tspan fill="#B5790F">◐ </tspan>配送执行（周一 / 三 / 五）</text>
 <text x="500" y="1428" font-size="11" fill="#93610E" text-anchor="middle" dominant-baseline="central">按线路容量装车 · 记录截单到签收各段时间（f51）</text>
 
 <rect x="716" y="1290" width="240" height="158" rx="6" fill="#fff" stroke="#B4B2A9" stroke-width="0.7" stroke-dasharray="4 3"/>
-<text x="836" y="1314" font-size="12" font-weight="500" fill="#5F5E5A" text-anchor="middle" dominant-baseline="central">延迟归因分段统计</text>
+<text x="836" y="1314" font-size="12" font-weight="500" fill="#5F5E5A" text-anchor="middle" dominant-baseline="central"><tspan fill="#8A8A8A">○ </tspan>延迟归因分段统计</text>
 <text x="836" y="1336" font-size="11" fill="#888780" text-anchor="middle" dominant-baseline="central">配送排队 ≈ 30% 延迟，</text>
 <text x="836" y="1354" font-size="11" fill="#888780" text-anchor="middle" dominant-baseline="central">不得误判为预测误差（f51）</text>
 <text x="836" y="1376" font-size="11" fill="#888780" text-anchor="middle" dominant-baseline="central">各部门完成时间分别记录，</text>
@@ -196,17 +202,17 @@
 <rect x="20" y="1622" width="960" height="480" rx="12" fill="#EAF3DE" opacity="0.5"/>
 <rect x="32" y="1634" width="160" height="24" rx="5" fill="#C0DD97"/>
 <text x="112" y="1646" font-size="12.5" font-weight="500" fill="#27500A" text-anchor="middle" dominant-baseline="central">门店可见与改进闭环</text>
-<text x="206" y="1646" font-size="11.5" fill="#3B6D11" dominant-baseline="central"> 店长 林亦舟 · 现有终端操作（f13）</text>
+<text x="206" y="1646" font-size="11.5" fill="#3B6D11" dominant-baseline="central"> 店长 林亦舟 · 现有终端操作（f13）<tspan fill="#B5790F"> · ◐ 部分实现</tspan></text>
 
 <path d="M500 1448 L500 1490 M500 1490 L500 1668" stroke="#5F5E5A" stroke-width="1.3" marker-end="url(#a)"/>
 
 <rect x="130" y="1668" width="320" height="82" rx="6" fill="#EAF3DE" stroke="#639922" stroke-width="0.7"/>
-<text x="290" y="1692" font-size="12.5" fill="#173404" text-anchor="middle" dominant-baseline="central">门店端可见面板</text>
+<text x="290" y="1692" font-size="12.5" fill="#173404" text-anchor="middle" dominant-baseline="central"><tspan fill="#2C7A4B">● </tspan>门店端可见面板</text>
 <text x="290" y="1712" font-size="11" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">预计到货时间 + 本次未满足数量 + 分配依据（f52）</text>
 <text x="290" y="1730" font-size="10" fill="#888780" text-anchor="middle" dominant-baseline="central">待补信息与最后同步时间保留可见（f13）</text>
 
 <rect x="550" y="1668" width="320" height="82" rx="6" fill="#EAF3DE" stroke="#639922" stroke-width="0.7"/>
-<text x="710" y="1692" font-size="12.5" fill="#173404" text-anchor="middle" dominant-baseline="central">现场复核与异常上报</text>
+<text x="710" y="1692" font-size="12.5" fill="#173404" text-anchor="middle" dominant-baseline="central"><tspan fill="#8A8A8A">○ </tspan>现场复核与异常上报</text>
 <text x="710" y="1712" font-size="11" fill="#3B6D11" text-anchor="middle" dominant-baseline="central">异常按固定类型选项上报，不走群聊/个人表（f14）</text>
 <text x="710" y="1730" font-size="10" fill="#888780" text-anchor="middle" dominant-baseline="central">反馈须关联原业务编号与资料版本（f54）</text>
 
@@ -214,11 +220,11 @@
 <path d="M710 1750 L710 1790 M710 1790 L290 1790 M290 1790 L290 1750" stroke="#639922" stroke-width="1.2" marker-end="url(#a)"/>
 
 <rect x="290" y="1812" width="420" height="58" rx="6" fill="#FAEEDA" stroke="#BA7517" stroke-width="0.7"/>
-<text x="500" y="1834" font-size="12.5" fill="#412402" text-anchor="middle" dominant-baseline="central">每周复盘误判与未解决问题（f55）</text>
+<text x="500" y="1834" font-size="12.5" fill="#412402" text-anchor="middle" dominant-baseline="central"><tspan fill="#8A8A8A">○ </tspan>每周复盘误判与未解决问题（f55）</text>
 <text x="500" y="1854" font-size="11" fill="#854F0B" text-anchor="middle" dominant-baseline="central">运营总监指定改进负责人 → 复测通过后更新规则</text>
 
 <rect x="290" y="1940" width="420" height="96" rx="8" fill="#2C5F2D" opacity="0.92"/>
-<text x="500" y="1968" font-size="13.5" font-weight="500" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central">验收口径（REQ-6 · 三指标并行）</text>
+<text x="500" y="1968" font-size="13.5" font-weight="500" fill="#FFFFFF" text-anchor="middle" dominant-baseline="central"><tspan fill="#D8EED4">○ </tspan>验收口径（REQ-6 · 三指标并行）</text>
 <text x="500" y="1992" font-size="12" fill="#D8EED4" text-anchor="middle" dominant-baseline="central">缺货率 &lt; 5% · 周转 ≤ 35 天 · 报废不增加 · 促销期误差单列（f42）</text>
 <text x="500" y="2014" font-size="11" fill="#C4E0BF" text-anchor="middle" dominant-baseline="central">不以全面增库存换缺货下降（f02）· 指标分母 / 周期由业务负责人书面固定（f53）</text>
 
@@ -226,7 +232,7 @@
 
 <!-- 图例：AI/系统 与 人工 的边界说明 -->
 <rect x="716" y="1812" width="240" height="94" rx="6" fill="#fff" stroke="#B4B2A9" stroke-width="0.7" stroke-dasharray="4 3"/>
-<text x="836" y="1836" font-size="12" font-weight="500" fill="#5F5E5A" text-anchor="middle" dominant-baseline="central">边界说明</text>
+<text x="836" y="1836" font-size="12" font-weight="500" fill="#5F5E5A" text-anchor="middle" dominant-baseline="central"><tspan fill="#B5790F">◐ </tspan>边界说明</text>
 <text x="836" y="1858" font-size="10.5" fill="#888780" text-anchor="middle" dominant-baseline="central">AI 只做建议，不做确认</text>
 <text x="836" y="1878" font-size="10.5" fill="#888780" text-anchor="middle" dominant-baseline="central">自动采购不直接上线（f22）</text>
 <text x="836" y="1898" font-size="10.5" fill="#888780" text-anchor="middle" dominant-baseline="central">接口失败走原人工流程（f35）</text>
@@ -237,7 +243,7 @@
 
 <div class="note">
   <b>说明：</b>本图为<b>局部数智化流程</b>，仅覆盖「补货建议生成与审核」环节（对应现状流程中的总部预估销量 → 建议量 → 分配段），不含货架巡检与盘点的前段现状。设计要点：
-  ① 数据治理为前置层，口径书面确认后方可建模（REQ-1）；② AI 建议内嵌整箱、起订量与线路容量约束（REQ-2）；③ 停止条件与人工复核为硬约束，未经确认不覆盖原记录（REQ-5）；④ 门店可见预计到货与未满足数量（REQ-4）；⑤ 验收三指标并行（REQ-6）。所有环节均为待验证假设，需经 6 周试点确认。
+  ① 数据治理为前置层，口径书面确认后方可建模（REQ-1）；② AI 建议内嵌整箱、起订量与线路容量约束（REQ-2）；③ 停止条件与人工复核为硬约束，未经确认不覆盖原记录（REQ-5）；④ 门店可见预计到货与未满足数量（REQ-4）；⑤ 验收三指标并行（REQ-6）。所有环节均为待验证假设，需经 6 周试点确认。<br><br><b>实现状态标注（2026-11-05 复核代码后标注）：</b><b style="color:#2C7A4B;">●</b> 已实现，原型可演示；<b style="color:#B5790F;">◐</b> 部分实现，结构或校验已建、治理与执行环节未做；<b style="color:#8A8A8A;">○</b> 试点后规划，当前未建。需特别说明两处口径差异：<b>① 图中「AI 销量预测」当前实现为「近 7 天日均销量 × 覆盖天数」，再套整箱 / 起订量 / 分配上限，未建预测模型、未接入 WMS 出库与节假日客流</b>——这与需求报告「最值得先做的不是预测模型」的结论一致；<b>② 人工复核层的计划员与区域经理角色尚未建，系统当前由店长在确认卡上完成确认</b>（确认后才入草稿表，未确认不入库）。三指标验收、异常上报、每周复盘、延迟归因均为试点后规划。逐项状态与对应代码位置见 docs/README.md 的需求追溯表。
 </div>
 
 </body>
