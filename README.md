@@ -41,6 +41,9 @@
 │   ├── run_eval.py           # 离线评测一键入口：资产盘点 + 检索预检 + 三条轨迹回归 → eval_report.md
 │   ├── probe_retrieval.py    # 制度类检索预检（阈值回归）
 │   └── eval_report.md        # 最近一次离线评测报告（自动生成）
+├── scripts/
+│   ├── export_run_trace.py   # 把 chat.db 里的真实执行轨迹导出成 Markdown 实录
+│   └── export_png.py         # 流程图 HTML → PNG（Chrome headless 两阶段截图）
 └── output/                   # 文档流水线产物（不入仓库，本地生成）
 ```
 
@@ -92,9 +95,12 @@ run_local.bat
 ```bash
 python -m pytest tests/ -v     # L1 框架层单元测试（数量抽取防线、写操作唯一性）
 python eval/run_eval.py        # L2 离线评测：30 条用例资产盘点 + 检索门禁（7/7 命中、3/3 陷阱判空）+ 三条轨迹回归
+python scripts/export_run_trace.py   # 列出最近运行；加 --run-id 可导出成 Markdown 实录
 ```
 
-每次 push / PR 由 GitHub Actions 自动跑上述两层检查，评测报告作为 artifact 保留。
+过程证据不靠截图：[`docs/delivery/运行实录-20箱牛奶案例.md`](docs/delivery/运行实录-20箱牛奶案例.md) 是把一次真实 5 轮执行（20 箱被拦 → 压到 10 箱 → 建草稿 → 店长确认）从轨迹三表原样导出的，每一轮的入参、返回、校验结论、落库字段都能核对。
+
+每次 push / PR 由 GitHub Actions 自动跑语法检查、单元测试与离线评测，评测报告作为 artifact 保留。
 
 ## 状态
 
