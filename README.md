@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/Chen-siyuan123/store-replenishment-inventory/actions/workflows/ci.yml/badge.svg)](https://github.com/Chen-siyuan123/store-replenishment-inventory/actions/workflows/ci.yml)
 [![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](src/2-MVP项目/requirements.txt)
-[![Tests](https://img.shields.io/badge/tests-13%20passed-brightgreen)](tests/test_framework_basics.py)
+[![Tests](https://img.shields.io/badge/tests-32%20passed-brightgreen)](tests/test_framework_basics.py)
 [![Eval](https://img.shields.io/badge/eval-30%20cases-1f6feb)](eval/cases_v1.json)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
 
@@ -15,6 +15,27 @@
 - **五类场景可视化测试过程**（有图有过程）：`test/2-场景测试过程/正常场景测试.docx`、`边界场景测试.docx`、`对抗场景测试.docx`、`权限场景测试.docx`、`故障场景测试.docx`
 - **部署说明（上线地址与冒烟报告）**：[`test/3-上线部署/门店补货与库存协同-部署说明.md`](test/3-上线部署/门店补货与库存协同-部署说明.md)（另附同名 docx）
 - **一键复现**：`python scripts/run_scenario_tests.py`（离线执行，不调用大模型 API）
+
+## 交付物清单对照
+
+全部交付物按清单编号落位，可逐项对照验收（文档索引见 [`docs/README.md`](docs/README.md)）：
+
+| 编号 | 交付项 | 仓库路径 | 形式 |
+|---|---|---|---|
+| docs-1 | 六人访谈记录 | [`docs/1-六人访谈记录/`](docs/1-六人访谈记录) | md + json + 3 份 csv |
+| docs-2 | 项目的基本简报 | [`docs/2-项目的基本简报/`](docs/2-项目的基本简报) | 4 份 html（客户简报 / 信息请求表 / 访谈问题库 / 干系人与分工） |
+| docs-3 | 典型事件资料 | [`docs/3-典型事件资料/`](docs/3-典型事件资料) | docx + 4 轮采访记录 txt |
+| docs-4 | 行业分析报告 | [`docs/4-行业分析报告/`](docs/4-行业分析报告) | docx + 同名 md |
+| docs-5 | 流程图 | [`docs/5-流程图/`](docs/5-流程图) | 现状图 / 数智化图（html + png） |
+| docs-6 | 需求分析方案 | [`docs/6-需求分析方案/`](docs/6-需求分析方案) | 需求定义文档 docx（10 章 / 14 表） |
+| docs-7 | 技术架构设计 | [`docs/7-技术架构设计/`](docs/7-技术架构设计) | 系统分层与模块边界 docx |
+| docs-8 | 报价单（低 / 中 / 高三档） | [`docs/8-报价单/`](docs/8-报价单) | docx + html + png（¥98,000 / ¥160,000 / ¥260,000） |
+| docs-9 | 上线交付运行手册 | [`docs/9-上线交付运行手册/`](docs/9-上线交付运行手册) | 启动部署 / 分角色操作 / 人工审核点 / 应急降级 |
+| src-1 | 问答助手归档 | [`src/1-问答助手归档/`](src/1-问答助手归档) | 阶段 1 单脚本原型 + 种子制度文档 |
+| src-2 | MVP 项目 | [`src/2-MVP项目/`](src/2-MVP项目) | FastAPI 应用 + agent 框架 + 知识库 + 人工确认点 |
+| test-1 | 测试方案 | [`test/1-测试方案/`](test/1-测试方案) | md + docx（五类场景 57 条用例） |
+| test-2 | 场景测试过程 | [`test/2-场景测试过程/`](test/2-场景测试过程) | 5 份 docx + 11 张图 + results.json |
+| test-3 | 上线部署（含网站地址） | [`test/3-上线部署/`](test/3-上线部署) | md + docx（地址 + 冒烟报告） |
 
 ## 项目结构
 
@@ -115,7 +136,9 @@ python scripts/export_run_trace.py   # 列出最近运行；加 --run-id 可导�
 
 ## 状态
 
-原型阶段：功能链路已通（4 轮完成建单、中断确认恢复、离线轨迹回归全过）。上线前检查清单见 [`docs/门店补货与库存协同-上线前检查清单.html`](docs/门店补货与库存协同-上线前检查清单.html)——其中 6 项阻塞项（限流、令牌持久化、建单幂等、降级开关、知识库软删等）未完成前不建议开放试点。清单 v1.1 已按代码复核：日志留存策略实际已实现（`retention.py`），从阻塞项移出。
+**MVP 已上线可演示**（地址见上）：4 轮完成建单、中断确认恢复、离线轨迹回归全过，57 条量化用例 100% 通过，CI 三件套（语法检查 / 单元测试 / 离线评测）每次 push 自动跑。
+
+面向**真实门店试点**仍需完成上线前检查清单中的 6 项加固（限流、令牌持久化、建单幂等、降级开关、知识库软删等），详见 [`docs/门店补货与库存协同-上线前检查清单.html`](docs/门店补货与库存协同-上线前检查清单.html)。清单 v1.1 已按代码复核：日志留存策略实际已实现（`retention.py`），已从阻塞项移出。
 
 管理后台（需 admin 登录）：`/admin` 导航页 → `/admin/kb` 知识库 / `/admin/prompts` 提示词 / `/admin/trace` 执行轨迹 / `/admin/audit` 审计与转交待办。
 
