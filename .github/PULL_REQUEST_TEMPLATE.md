@@ -33,5 +33,5 @@ python eval/run_eval.py
 ## 文档同步
 
 - [ ] `docs/README.md` 的 REQ → 代码追溯表已更新
-- [ ] `docs/delivery/验证与测试报告.md` 的结论已更新（或说明了未覆盖）
+- [ ] `docs/验证与测试报告.md` 的结论已更新（或说明了未覆盖）
 - [ ] `CHANGELOG.md` 已补条目
