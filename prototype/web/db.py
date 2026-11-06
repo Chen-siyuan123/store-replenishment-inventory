@@ -261,7 +261,10 @@ def init_db():
             delivery_date TEXT,
             basis         TEXT,                  -- 分配依据 JSON（库存/销量/条款/到货日/未满足）
             validation    TEXT,                  -- 四项校验结果 JSON
-            status        TEXT DEFAULT 'draft',  -- draft / submitted / allocated / rejected
+            -- 实际会被写入的只有 draft / submitted 两态；
+            -- allocated / rejected 为设计预留，代码里没有任何写入点（无审批路由、无 approver 字段），
+            -- 不要在文案或接口里声称会流转到这两态。
+            status        TEXT DEFAULT 'draft',
             created_by    TEXT,
             created_at    TEXT,
             submitted_at  TEXT
