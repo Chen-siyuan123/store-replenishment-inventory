@@ -28,7 +28,7 @@ import sys
 from datetime import datetime
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-WEB_DIR = os.path.abspath(os.path.join(HERE, "..", "src", "web"))
+WEB_DIR = os.path.abspath(os.path.join(HERE, "..", "src", "2-MVP项目"))
 sys.path.insert(0, WEB_DIR)
 os.chdir(WEB_DIR)
 
