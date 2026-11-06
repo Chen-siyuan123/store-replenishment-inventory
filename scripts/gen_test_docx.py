@@ -111,7 +111,7 @@ def gen_plan_docx():
 
     insert_md(fid, f"""# 门店补货与库存协同智能体 · 量化测试方案
 
-**版本**：v1.0（2026-11-06）　**测试对象**：门店补货与库存协同智能体 MVP（`prototype/web`，FastAPI + 自研 Harness）
+**版本**：v1.0（2026-11-06）　**测试对象**：门店补货与库存协同智能体 MVP（`src/2-MVP项目`，FastAPI + 自研 Harness）
 
 **测试方式**：离线自动化测试——真实工具层 / 门禁 / 会话状态机 / auth / 转交 / 留存代码，不调用大模型 API，可在 CI 一键复现（`python scripts/run_scenario_tests.py`）。
 
@@ -159,11 +159,11 @@ def gen_plan_docx():
 | S4 权限 | {suites['S4']['cost_ms']['p50']} | {suites['S4']['cost_ms']['p95']} | {suites['S4']['cost_ms']['max']} | {suites['S4']['cost_ms']['sum']} |
 | S5 故障 | {suites['S5']['cost_ms']['p50']} | {suites['S5']['cost_ms']['p95']} | {suites['S5']['cost_ms']['max']} | {suites['S5']['cost_ms']['sum']} |
 
-S1/S3 的 p95 偏高来自制度检索首次加载索引与 S3-07 故意的 1.5 秒过期等待，属测试设计成本而非系统延迟；工具层真实延迟基线见 docs/delivery/性能基线.md（235 次真实调用 p50/p95/max = 5/14/58 ms）。
+S1/S3 的 p95 偏高来自制度检索首次加载索引与 S3-07 故意的 1.5 秒过期等待，属测试设计成本而非系统延迟；工具层真实延迟基线见 docs/性能基线.md（235 次真实调用 p50/p95/max = 5/14/58 ms）。
 
 ## 五、测试环境、复现与缺陷管理
 
-- **环境**：Windows 11 + Python 3.13；种子数据由 db.py 自动生成；知识库由 prototype/data/补货制度.md 自动导入建索引。
+- **环境**：Windows 11 + Python 3.13；种子数据由 db.py 自动生成；知识库由 src/2-MVP项目/补货制度.md 自动导入建索引。
 - **执行**：`python scripts/run_scenario_tests.py`，57 例约 4 秒跑完，逐例打印判定与耗时；产物为 output/scenario-tests/results.json 与五份 md 过程记录。
 - **三层回归**：本场景测试 + `python -m pytest tests -q`（32 项框架层单元测试）+ `python eval/run_eval.py`（30 条评测用例），任何代码改动后三件套必须全绿。
 - **缺陷管理**：任何一条用例失败即阻断发布；修复后整场景回归，不允许只重跑失败例。

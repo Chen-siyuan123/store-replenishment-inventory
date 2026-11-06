@@ -5,7 +5,7 @@
 
 用法：
     python scripts/latency_stats.py            # 打印 Markdown 表
-    python scripts/latency_stats.py --write    # 覆盖写入 docs/delivery/性能基线.md 的数据段
+    python scripts/latency_stats.py --write    # 覆盖写入 docs/性能基线.md 的数据段
 """
 
 from __future__ import annotations
@@ -58,7 +58,7 @@ def render(by_tool: dict[str, list[int]], total: int) -> str:
 
 def main() -> None:
     ap = argparse.ArgumentParser(description="工具层耗时统计")
-    ap.add_argument("--write", action="store_true", help="把表格写进 docs/delivery/性能基线.md 的数据段")
+    ap.add_argument("--write", action="store_true", help="把表格写进 docs/性能基线.md 的数据段")
     args = ap.parse_args()
 
     by_tool, total = collect()

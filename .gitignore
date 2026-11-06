@@ -58,3 +58,6 @@ output/
 *.db.bak*
 *.db.bak_before_upgrade
 src/2-MVP项目/archive/
+
+# WorkBuddy 本地运行产物
+.wbapp_*.genie

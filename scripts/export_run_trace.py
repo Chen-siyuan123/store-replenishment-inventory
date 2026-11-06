@@ -5,7 +5,7 @@ agent_runs / agent_steps / agent_actions 三张表直接读出来。
 
 用法：
     python scripts/export_run_trace.py --run-id f7d05cf6ffbd \
-        --out "docs/delivery/运行实录-20箱牛奶案例.md"
+        --out "docs/运行实录-20箱牛奶案例.md"
 
 不带 --run-id 时，列出最近 10 次运行供挑选。
 """
@@ -163,7 +163,7 @@ def export(conn: sqlite3.Connection, run_id: str) -> str:
         "```bash",
         "cd src/2-MVP项目 && python -m agent.scenarios        # 跑三条离线轨迹（写库）",
         "python scripts/export_run_trace.py                   # 列出最近运行，拿到 run_id",
-        f"python scripts/export_run_trace.py --run-id {run['id']} --out docs/delivery/运行实录.md",
+        f"python scripts/export_run_trace.py --run-id {run['id']} --out docs/运行实录.md",
         "```",
         "",
     ]
