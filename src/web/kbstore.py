@@ -351,7 +351,7 @@ class KBStore:
         return [dict(r) for r in rows]
 
     def seed_default(self, uploaded_by: str = "system") -> bool:
-        """导入种子文档（prototype/data/补货制度.md）。已存在同名文档或导入失败返回 False。"""
+        """导入种子文档（src/data/补货制度.md）。已存在同名文档或导入失败返回 False。"""
         if not os.path.exists(SEED_KB_PATH):
             return False
         with open(SEED_KB_PATH, "rb") as f:

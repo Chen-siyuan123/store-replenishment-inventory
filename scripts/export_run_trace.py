@@ -19,7 +19,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DB_PATH = ROOT / "prototype" / "web" / "chat.db"
+DB_PATH = ROOT / "src" / "web" / "chat.db"
 
 # 结果摘要里只保留这些关键字段，避免把整段 JSON 塞进文档
 KEEP_KEYS = (
@@ -161,7 +161,7 @@ def export(conn: sqlite3.Connection, run_id: str) -> str:
         "## 附：怎么复现这条轨迹",
         "",
         "```bash",
-        "cd prototype/web && python -m agent.scenarios        # 跑三条离线轨迹（写库）",
+        "cd src/web && python -m agent.scenarios        # 跑三条离线轨迹（写库）",
         "python scripts/export_run_trace.py                   # 列出最近运行，拿到 run_id",
         f"python scripts/export_run_trace.py --run-id {run['id']} --out docs/delivery/运行实录.md",
         "```",

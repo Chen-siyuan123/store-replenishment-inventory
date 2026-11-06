@@ -108,7 +108,11 @@ def get_current_user(request: Request) -> dict:
     auth_header = request.headers.get("Authorization", "")
     token = auth_header[len("Bearer "):] if auth_header.startswith("Bearer ") else ""
     if not token:
+        token = request.headers.get("X-Access-Token", "")
+    if not token:
         token = request.cookies.get("access_token", "")
+    if not token:
+        token = request.query_params.get("token", "")
     if not token:
         raise HTTPException(status_code=401, detail={"code": "UNAUTHORIZED",
                                                      "message": "未登录或登录凭证无效"})

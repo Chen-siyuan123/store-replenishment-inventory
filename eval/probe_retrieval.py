@@ -12,7 +12,7 @@ kbstore.search（与 search_policy_docs 工具同一套混合检索），
 
 只读：不写库、不调 LLM、不消耗 API 额度。
 
-用法：cd prototype/web && python ../../eval/probe_retrieval.py
+用法：cd src/web && python ../../eval/probe_retrieval.py
 """
 
 import io
@@ -20,7 +20,7 @@ import json
 import os
 import sys
 
-WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "prototype", "web")
+WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "web")
 sys.path.insert(0, os.path.abspath(WEB_DIR))
 os.chdir(WEB_DIR)
 

@@ -1,7 +1,7 @@
 # 门店补货与库存协同智能体
 
 [![CI](https://github.com/Chen-siyuan123/store-replenishment-inventory/actions/workflows/ci.yml/badge.svg)](https://github.com/Chen-siyuan123/store-replenishment-inventory/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](prototype/web/requirements.txt)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](src/web/requirements.txt)
 [![Tests](https://img.shields.io/badge/tests-13%20passed-brightgreen)](tests/test_framework_basics.py)
 [![Eval](https://img.shields.io/badge/eval-30%20cases-1f6feb)](eval/cases_v1.json)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
@@ -11,7 +11,7 @@
 ## 项目结构
 
 ```
-├── prototype/
+├── src/
 │   ├── web/                  # 可运行的 Web 原型（主体代码）
 │   │   ├── server.py         # FastAPI 入口：SSE 流式问答、HITL 确认、管理后台
 │   │   ├── agent/            # 自研轻量执行循环（Harness）
@@ -78,7 +78,7 @@
 ## 本地运行
 
 ```bat
-cd prototype/web
+cd src/web
 run_local.bat
 ```
 

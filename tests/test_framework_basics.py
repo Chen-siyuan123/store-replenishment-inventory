@@ -24,7 +24,7 @@ import sys
 from datetime import date
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                "..", "prototype", "web"))
+                                "..", "src", "web"))
 
 import tools  # noqa: E402
 
@@ -183,7 +183,7 @@ class TestApprovalCheck:
         # 静态守护：提交接口不得再输出系统实际做不到的承诺。
         # 无审批路由 / 无 approver 字段 / allocated 状态无写入点 → 不能说「等待总部确认」。
         src_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                "..", "prototype", "web", "server.py")
+                                "..", "src", "web", "server.py")
         with open(src_path, encoding="utf-8") as f:
             src = f.read()
         assert "等待总部确认与仓库分配" not in src
@@ -232,7 +232,7 @@ class TestDeliveryDateCheck:
     def test_submit_rechecks_delivery_date(self):
         # 静态守护：submit_draft 必须在写库前调用复验，否则这道闸门等于没装
         src_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                                "..", "prototype", "web", "server.py")
+                                "..", "src", "web", "server.py")
         with open(src_path, encoding="utf-8") as f:
             src = f.read()
         submit = src[src.index("def submit_draft"):src.index("def cancel_draft")]

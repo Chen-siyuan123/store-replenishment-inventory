@@ -45,7 +45,7 @@ from rank_bm25 import BM25Okapi
 # ============================================================
 
 KB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                       "data", "补货制度.md")  # prototype/data/补货制度.md
+                       "data", "补货制度.md")  # src/data/补货制度.md
 
 # 切片参数：500 字一片，相邻片重叠 50 字（重叠防止条款被切断后检索丢失上下文）
 CHUNK_SIZE = 500

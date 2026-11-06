@@ -16,7 +16,7 @@ from collections import defaultdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DB_PATH = ROOT / "prototype" / "web" / "chat.db"
+DB_PATH = ROOT / "src" / "web" / "chat.db"
 DOC_PATH = ROOT / "docs" / "delivery" / "性能基线.md"
 
 
@@ -30,7 +30,7 @@ def pct(values: list[int], p: float) -> int:
 
 def collect() -> tuple[dict[str, list[int]], int]:
     if not DB_PATH.exists():
-        raise SystemExit(f"找不到数据库：{DB_PATH}（先跑 cd prototype/web && python -m agent.scenarios）")
+        raise SystemExit(f"找不到数据库：{DB_PATH}（先跑 cd src/web && python -m agent.scenarios）")
     conn = sqlite3.connect(DB_PATH)
     rows = conn.execute(
         "select tool, duration_ms from agent_steps "

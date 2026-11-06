@@ -1,6 +1,6 @@
 # 智能体执行循环设计（Agent Harness）
 
-> 适用版本：`prototype/web` · 阶段 2（智能体化）
+> 适用版本：`src/web` · 阶段 2（智能体化）
 > 代码：`agent/harness.py`（循环）、`agent/store.py`（轨迹日志）、`agent/scenarios.py`（离线回放）
 > 一句话：**模型负责「想做什么」，框架负责「能不能做、做了记下来」。**
 
@@ -265,7 +265,7 @@ result_summary=第 5 轮：决定调用 1 个工具（create_replenishment_draft
 ## 六、怎么跑
 
 ```bash
-cd prototype/web
+cd src/web
 
 # 1) 离线回放三条轨迹（不消耗模型额度，轨迹写入数据库）
 python -m agent.scenarios

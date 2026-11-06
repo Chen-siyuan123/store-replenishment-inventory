@@ -214,7 +214,12 @@ const TOKEN = localStorage.getItem('token');
 
 /* 统一请求封装：自动携带 JWT；401/403 时跳回登录页 */
 async function apiFetch(url, options = {}) {
-  options.headers = Object.assign({}, options.headers, { 'Authorization': 'Bearer ' + TOKEN });
+  options.headers = Object.assign({}, options.headers, {
+    'Authorization': 'Bearer ' + TOKEN,
+    'X-Access-Token': TOKEN,          // 托管网关可能剥离 Authorization，用自定义头兜底
+  });
+  // 反向代理若连自定义头一起过滤，再用 query 兜底（仅演示环境；正式版应改为同源 Cookie 方案）
+  if (TOKEN) url += (url.includes('?') ? '&' : '?') + 'token=' + encodeURIComponent(TOKEN);
   const resp = await fetch(url, options);
   if (resp.status === 401 || resp.status === 403) {
     localStorage.removeItem('token');

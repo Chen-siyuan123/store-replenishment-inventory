@@ -7,7 +7,7 @@
 ## 一、三步启动
 
 ```bat
-cd prototype/web
+cd src/web
 
 copy .env.example .env      :: 1. 复制配置模板，用记事本打开填 LLM_API_KEY
 python config.py            :: 2. 配置体检（不启动服务，先确认配置对不对）
@@ -27,7 +27,7 @@ run_local.bat               :: 3. 双击启动（自动查依赖、起服务、�
 
 ## 二、配置项
 
-全部放在 `prototype/web/.env`，由 `config.py` 在进程启动时加载（**已存在的系统环境变量优先**，便于服务器覆盖而不改文件）。
+全部放在 `src/web/.env`，由 `config.py` 在进程启动时加载（**已存在的系统环境变量优先**，便于服务器覆盖而不改文件）。
 
 | 变量 | 必填 | 示例 | 说明 |
 |---|---|---|---|
@@ -63,7 +63,7 @@ run_local.bat               :: 3. 双击启动（自动查依赖、起服务、�
 ## 四、目录速览
 
 ```
-prototype/web/
+src/web/
 ├── .env / .env.example     配置（.env 已被 .gitignore 忽略，不会提交）
 ├── config.py               配置加载 + 自检（可单独运行：python config.py）
 ├── run_local.bat           Windows 一键启动

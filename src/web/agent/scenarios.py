@@ -16,7 +16,7 @@
   RAG 检索用 _OfflineKB（按关键词重合度打分），因为真实检索需要调 embedding API。
 
 运行：
-    cd prototype/web
+    cd src/web
     python -m agent.scenarios          # 跑全部三条
     python -m agent.scenarios b        # 只跑场景 b
 """

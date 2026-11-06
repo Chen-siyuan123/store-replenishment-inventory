@@ -122,4 +122,4 @@
 - 11 个业务工具（库存、销量、配送日历、制度检索、校验、建单等）与工具风险分级。
 - SQLite 存储：会话、消息、`agent_runs / agent_steps / agent_actions` 轨迹三表。
 - JWT 登录态 + PBKDF2 密码哈希；`.env` 配置加载与中文自检。
-- 阶段 1 原型 `prototype/stage1/replenishment_proto.py`（单脚本 RAG，验证检索可行性，已被 `prototype/web` 取代）。
+- 阶段 1 原型 `src/stage1/replenishment_proto.py`（单脚本 RAG，验证检索可行性，已被 `src/web` 取代）。
