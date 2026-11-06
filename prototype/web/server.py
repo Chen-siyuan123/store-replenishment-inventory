@@ -652,6 +652,11 @@ def submit_draft(draft_id: int, user: dict = Depends(get_current_user)):
         if row["status"] != "draft":
             return err("DRAFT_STATUS_INVALID",
                        f"草稿当前状态为「{row['status']}」，不能再次提交", 400)
+        # 建草稿时校验过配送日，但那一刻到点提交之间可能隔了几天。
+        # 不复验就会把过期申请收进库、发给仓库，等于系统自己制造错单。
+        date_ok, date_reason = tools.delivery_date_check(row["delivery_date"])
+        if not date_ok:
+            return err("DELIVERY_DATE_EXPIRED", date_reason, 400)
         conn.execute(
             "UPDATE replenishment_drafts SET status = 'submitted', submitted_at = ? "
             "WHERE id = ?", (db.now(), draft_id))

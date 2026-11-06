@@ -190,6 +190,56 @@ class TestApprovalCheck:
         assert "needs_approval" in src
 
 
+# ------------------------------------------------------------
+# 提交时复验配送日（草稿放置几天后提交，不能把过期单收进来）
+# ------------------------------------------------------------
+class TestDeliveryDateCheck:
+    """建草稿时校验过配送日，提交那一刻必须再验一次：
+    11-05 建的单写 11-06 配送、11-08 才点提交，系统照收就等于制造错单。"""
+
+    TODAY = date(2026, 11, 6)
+
+    def test_today_still_allowed(self):
+        # 当天配送仍可提交：与 validate_replenishment 的「早于今天才拒绝」保持一致
+        assert tools.delivery_date_check("2026-11-06", self.TODAY) == (True, None)
+
+    def test_future_allowed(self):
+        ok, reason = tools.delivery_date_check("2026-11-09", self.TODAY)
+        assert ok is True and reason is None
+
+    def test_expired_rejected_with_reason(self):
+        ok, reason = tools.delivery_date_check("2026-11-05", self.TODAY)
+        assert ok is False
+        # 文案要给出下一步动作，且不能暗示「原地改个日期就能提交」——这张卡提交不了
+        assert "已早于今天" in reason and "重新发起" in reason
+
+    def test_bad_format_rejected(self):
+        for bad in ("11/06", "明天", "", "2026-13-01"):
+            ok, reason = tools.delivery_date_check(bad, self.TODAY)
+            assert ok is False and reason, f"{bad!r} 应被拒绝"
+
+    def test_lenient_format_kept_consistent_with_validate(self):
+        # strptime 接受非零填充的 2026-11-6，这里刻意不为难它：
+        # validate_replenishment 用的是同一个 strptime，若提交端更严就会出现
+        # 「建得成草稿、提交时被拒」的死锁——比格式不整齐更难排查。
+        ok, _ = tools.delivery_date_check("2026-11-6", self.TODAY)
+        assert ok is True
+
+    def test_none_does_not_crash(self):
+        ok, reason = tools.delivery_date_check(None, self.TODAY)
+        assert ok is False and "格式" in reason
+
+    def test_submit_rechecks_delivery_date(self):
+        # 静态守护：submit_draft 必须在写库前调用复验，否则这道闸门等于没装
+        src_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "..", "prototype", "web", "server.py")
+        with open(src_path, encoding="utf-8") as f:
+            src = f.read()
+        submit = src[src.index("def submit_draft"):src.index("def cancel_draft")]
+        assert "delivery_date_check" in submit
+        assert submit.index("delivery_date_check") < submit.index("UPDATE replenishment_drafts")
+
+
 if __name__ == "__main__":
     # 无 pytest 环境时的兜底运行方式
     import traceback

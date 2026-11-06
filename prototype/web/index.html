@@ -442,6 +442,11 @@ async function submitDraft(id, card) {
   } else {
     state.className = 'state no';
     state.textContent = '✕ ' + (data.message || '提交失败');
+    // 配送日已过期的卡再点也提交不了，收掉按钮避免反复点同一个错
+    if (data.code === 'DELIVERY_DATE_EXPIRED') {
+      const act = card.querySelector('.actions');
+      if (act) act.remove();
+    }
   }
 }
 

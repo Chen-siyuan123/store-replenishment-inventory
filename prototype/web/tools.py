@@ -660,6 +660,27 @@ def approval_check(suggested, requested, threshold: float = 0.5):
     return dev > threshold, dev
 
 
+def delivery_date_check(delivery_date, today=None):
+    """提交时复验配送日：只回答「这张单现在还排得进去吗」。
+
+    validate_replenishment 在建草稿前校验一次，但确认令牌 900 秒过期、
+    草稿本身可以放很久——11-05 建的单写 11-06 配送，店长 11-08 才点提交，
+    系统若照收，仓库拿到的就是一张过期申请。这个函数只复验「日期是否已经过去」
+    与格式；发车星期与线路余量需要重查线路表，留给二期（见验证报告「诚实的边界」）。
+
+    返回 (ok, reason)；ok=True 时 reason 为 None。today 只为测试注入。
+    """
+    try:
+        want = datetime.strptime(str(delivery_date or ""), "%Y-%m-%d").date()
+    except (TypeError, ValueError):
+        return False, "配送日缺失或格式不是 YYYY-MM-DD，请重新选择配送日"
+    today = today or date.today()
+    if want < today:
+        return False, (f"配送日 {want} 已早于今天（{today}），无法排入配送；"
+                       "请重新发起一次补货申请并告知新的配送日")
+    return True, None
+
+
 def get_sales_context(ctx, sku: str, days: int = 7):
     """销量依据核对：零销量 / 无记录 / 编码未归并 → 依据缺失，停止。"""
     raw = sku

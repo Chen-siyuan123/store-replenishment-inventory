@@ -6,7 +6,7 @@
 
 [project]
 name = "store-replenishment-agent"
-version = "0.3.1"
+version = "0.3.2"
 description = "门店补货与库存协同智能体：自然语言补货助手，先出草稿、人工确认、再提交"
 readme = "README.md"
 requires-python = ">=3.10"
