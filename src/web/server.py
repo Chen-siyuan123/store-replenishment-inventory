@@ -120,6 +120,19 @@ def startup():
 # 页面路由
 # ============================================================
 
+@app.get("/api/health")
+def health(request: Request):
+    """部署健康检查：确认实例存活、代码版本与鉴权通道是否收到凭据。"""
+    return {
+        "ok": True,
+        "build": "2026-11-06-auth-fallback",
+        "token_header": bool(request.headers.get("Authorization")
+                             or request.headers.get("X-Access-Token")),
+        "token_query": bool(request.query_params.get("token")),
+        "token_cookie": bool(request.cookies.get("access_token")),
+    }
+
+
 @app.get("/login", response_class=HTMLResponse)
 def login_page(request: Request):
     """登录页（SSR）。"""

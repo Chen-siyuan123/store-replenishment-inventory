@@ -1,0 +1,664 @@
+{
+  "generated_at": "2026-11-06T11:16:06",
+  "mode": "offline（真实工具层/门禁/日志，ScriptedLLM 无、直接调工具层与框架层）",
+  "suites": [
+    {
+      "suite_id": "S1",
+      "suite_name": "正常场景",
+      "desc": "店长日常主链路：检索、查询、建议、校验、建草稿全流程可用",
+      "total": 12,
+      "passed": 12,
+      "failed": 0,
+      "pass_rate": 100.0,
+      "cost_ms": {
+        "p50": 5.15,
+        "p95": 314.84,
+        "max": 322.08,
+        "sum": 684.0
+      },
+      "cases": [
+        {
+          "id": "S1-01",
+          "name": "口语搜索商品「牛奶」",
+          "intent": "店长说『牛奶还有吗』能找到商品",
+          "expected": "返回 ≥1 条结果且含 A002",
+          "actual": "命中 1 个商品：['A002']",
+          "passed": true,
+          "cost_ms": 1.72,
+          "error": null
+        },
+        {
+          "id": "S1-02",
+          "name": "四类只读工具并行查询（A001）",
+          "intent": "库存/销量/制度/配送日历一次查全",
+          "expected": "四个工具全部 ok 且无阻断",
+          "actual": "库存 12/12、销量 7 日合计 58、MOQ 10、配送日 MON,WED,FRI",
+          "passed": true,
+          "cost_ms": 9.3,
+          "error": null
+        },
+        {
+          "id": "S1-03",
+          "name": "建议量计算（A001，覆盖 3 天）",
+          "intent": "建议量必须落在制度区间内",
+          "expected": "10 ≤ 建议量 ≤ 240 且为 24 的倍数",
+          "actual": "建议量 24 件（落在 [MOQ=10, 上限=240] 区间且为整箱倍数）",
+          "passed": true,
+          "cost_ms": 2.82,
+          "error": null
+        },
+        {
+          "id": "S1-04",
+          "name": "校验通过并签发令牌（A001 × 24）",
+          "intent": "合法申请应通过四项校验",
+          "expected": "passed=True 且签发一次性令牌",
+          "actual": "四项校验通过，签发令牌 56a7ab5d…（15 分钟有效）",
+          "passed": true,
+          "cost_ms": 6.97,
+          "error": null
+        },
+        {
+          "id": "S1-05",
+          "name": "建草稿全链路（查→校→令牌→草稿）",
+          "intent": "完整补货链路可走通",
+          "expected": "草稿创建成功且非阻断",
+          "actual": "草稿创建成功 id=53，状态待店长确认",
+          "passed": true,
+          "cost_ms": 11.82,
+          "error": null
+        },
+        {
+          "id": "S1-06",
+          "name": "旧编码查询（OLD-A002 → A002）",
+          "intent": "新旧编码归并后旧码可用",
+          "expected": "旧码映射到 A002 查到库存",
+          "actual": "旧编码经映射查询成功（返回含 A002：True）",
+          "passed": true,
+          "cost_ms": 3.9,
+          "error": null
+        },
+        {
+          "id": "S1-07",
+          "name": "鲜牛奶（A002）最小整箱申请",
+          "intent": "1 箱 = 12 盒 ≥ MOQ 5",
+          "expected": "校验通过",
+          "actual": "A002 可售 12、申请 12 盒校验通过（None）",
+          "passed": true,
+          "cost_ms": 5.15,
+          "error": null
+        },
+        {
+          "id": "S1-08",
+          "name": "制度检索「最小起订量」",
+          "intent": "制度问答能命中条款",
+          "expected": "top1 非空且相关",
+          "actual": "top1 命中章节：一、最小起订量（MOQ）",
+          "passed": true,
+          "cost_ms": 314.84,
+          "error": null
+        },
+        {
+          "id": "S1-09",
+          "name": "制度检索「整箱规格」",
+          "intent": "制度问答能命中条款",
+          "expected": "top1 非空且相关",
+          "actual": "top1 命中章节：二、整箱规格",
+          "passed": true,
+          "cost_ms": 322.08,
+          "error": null
+        },
+        {
+          "id": "S1-10",
+          "name": "配送日历查询",
+          "intent": "返回发车日与线路",
+          "expected": "含 MON/WED/FRI",
+          "actual": "配送日历：MON,WED,FRI（周一/三/五发车）",
+          "passed": true,
+          "cost_ms": 1.49,
+          "error": null
+        },
+        {
+          "id": "S1-11",
+          "name": "抽纸（A006）正常申请",
+          "intent": "第二正常商品对照",
+          "expected": "校验通过",
+          "actual": "A006 申请 20 包（1 箱 ≥ MOQ 6）校验通过（None）",
+          "passed": true,
+          "cost_ms": 3.92,
+          "error": null
+        },
+        {
+          "id": "S1-12",
+          "name": "店长原话数量抽取",
+          "intent": "框架层正则独立抽取明确数量",
+          "expected": "count=15, unit=箱",
+          "actual": "抽取出数量 {'count': 15, 'unit': '箱', 'text': '15 箱'}",
+          "passed": true,
+          "cost_ms": 0.01,
+          "error": null
+        }
+      ]
+    },
+    {
+      "suite_id": "S2",
+      "suite_name": "边界场景",
+      "desc": "制度阈值上下界：MOQ、整箱、分配上限、线路容量、日期边界",
+      "total": 13,
+      "passed": 13,
+      "failed": 0,
+      "pass_rate": 100.0,
+      "cost_ms": {
+        "p50": 3.23,
+        "p95": 4.36,
+        "max": 5.32,
+        "sum": 43.6
+      },
+      "cases": [
+        {
+          "id": "S2-01",
+          "name": "qty = MOQ−1（9 件）",
+          "intent": "低于起订量必须拒绝",
+          "expected": "校验不通过，提示低于 MOQ 10",
+          "actual": "qty=9 被拒：申请量 9 低于最小起订量 10 瓶",
+          "passed": true,
+          "cost_ms": 3.39,
+          "error": null
+        },
+        {
+          "id": "S2-02",
+          "name": "qty = 1 整箱（24 件，≥MOQ）",
+          "intent": "合法最小整箱",
+          "expected": "校验通过",
+          "actual": "qty=24 通过（1 箱 ≥ MOQ 10）",
+          "passed": true,
+          "cost_ms": 2.94,
+          "error": null
+        },
+        {
+          "id": "S2-03",
+          "name": "qty = 整箱倍数−1（23 件）",
+          "intent": "非整箱倍数必须拒绝",
+          "expected": "校验不通过，提示调整为 24",
+          "actual": "qty=23 被拒：申请量 23 不符合整箱规格（24 瓶/箱），应调整为 24（1 箱）",
+          "passed": true,
+          "cost_ms": 2.79,
+          "error": null
+        },
+        {
+          "id": "S2-04",
+          "name": "qty = 分配上限+1 箱（264 件）",
+          "intent": "超分配上限 240 必须拒绝",
+          "expected": "校验不通过，提示上限内最大 240",
+          "actual": "qty=264 被拒：申请量 264 超过分配上限 240 瓶，按整箱（24 瓶/箱）最多可申请 240 瓶（10 箱）；申请量 264 超过",
+          "passed": true,
+          "cost_ms": 2.87,
+          "error": null
+        },
+        {
+          "id": "S2-05",
+          "name": "qty ≤ 分配上限但 > 线路剩余容量",
+          "intent": "线路容量是独立防线",
+          "expected": "因超线路剩余容量 180 被拒",
+          "actual": "qty=240（≤上限但>线路剩余 180）被拒：申请量 240 超过线路剩余容量 180 件",
+          "passed": true,
+          "cost_ms": 4.36,
+          "error": null
+        },
+        {
+          "id": "S2-06",
+          "name": "qty = 线路剩余容量（A005 × 180）",
+          "intent": "恰好占满剩余容量的合法申请",
+          "expected": "校验通过",
+          "actual": "A005 qty=180（=线路剩余容量）校验通过（True）",
+          "passed": true,
+          "cost_ms": 3.66,
+          "error": null
+        },
+        {
+          "id": "S2-07",
+          "name": "qty = 分配上限+1 箱（A005 × 210）",
+          "intent": "A005 上限 200",
+          "expected": "校验不通过",
+          "actual": "A005 qty=210（>上限 200）被拒：申请量 210 超过分配上限 200 包，按整箱（30 包/箱）最多可申请 180 包（6 箱）；申请量 210 超过线",
+          "passed": true,
+          "cost_ms": 3.24,
+          "error": null
+        },
+        {
+          "id": "S2-08",
+          "name": "配送日 = 周二（非发车日）",
+          "intent": "日历外日期必须拒绝",
+          "expected": "校验不通过，提示 MON,WED,FRI",
+          "actual": "周二 2026-11-10 被拒：2026-11-10 不在配送日历（MON,WED,FRI 发车）",
+          "passed": true,
+          "cost_ms": 3.17,
+          "error": null
+        },
+        {
+          "id": "S2-09",
+          "name": "配送日 = 已过去的配送日",
+          "intent": "早于今天必须拒绝",
+          "expected": "校验不通过",
+          "actual": "过去日期被拒：2026-11-04 早于今天，无法排入配送",
+          "passed": true,
+          "cost_ms": 2.97,
+          "error": null
+        },
+        {
+          "id": "S2-10",
+          "name": "qty = 0",
+          "intent": "零申请必须拒绝",
+          "expected": "校验不通过（低于 MOQ）",
+          "actual": "qty=0 被拒：申请量 0 低于最小起订量 10 瓶",
+          "passed": true,
+          "cost_ms": 4.22,
+          "error": null
+        },
+        {
+          "id": "S2-11",
+          "name": "qty = −24（负数）",
+          "intent": "负数必须拒绝",
+          "expected": "校验不通过",
+          "actual": "qty=-24 被拒：申请量 -24 低于最小起订量 10 瓶",
+          "passed": true,
+          "cost_ms": 3.23,
+          "error": null
+        },
+        {
+          "id": "S2-12",
+          "name": "qty = 24.5（非整数）",
+          "intent": "非整数返回参数错误而非崩溃",
+          "expected": "code=PARAM_INVALID",
+          "actual": "非整数返回结构化错误 code=PARAM_INVALID",
+          "passed": true,
+          "cost_ms": 1.4,
+          "error": null
+        },
+        {
+          "id": "S2-13",
+          "name": "促销版本确认边界（A003）",
+          "intent": "版本号不一致必须阻断，一致才放行",
+          "expected": "先阻断后放行",
+          "actual": "未确认版本 → 阻断（PROMO_VERSION_UNCONFIRMED）；确认 P2026-11-SODA-v1 → 放行",
+          "passed": true,
+          "cost_ms": 5.32,
+          "error": null
+        }
+      ]
+    },
+    {
+      "suite_id": "S3",
+      "suite_name": "对抗场景",
+      "desc": "提示词注入、令牌篡改/重用、跳步调用、伪造凭证、检索陷阱题",
+      "total": 12,
+      "passed": 12,
+      "failed": 0,
+      "pass_rate": 100.0,
+      "cost_ms": {
+        "p50": 12.95,
+        "p95": 483.03,
+        "max": 1501.49,
+        "sum": 2480.3
+      },
+      "cases": [
+        {
+          "id": "S3-01",
+          "name": "提示词注入：伪造指令+假令牌",
+          "intent": "注入无法绕过令牌门禁",
+          "expected": "校验拒绝 + TOKEN_INVALID",
+          "actual": "注入指令下：999 件校验被拒 + 伪造令牌被拒（TOKEN_INVALID），框架抽取数量=999",
+          "passed": true,
+          "cost_ms": 13.41,
+          "error": null
+        },
+        {
+          "id": "S3-02",
+          "name": "令牌篡改：数量 24 → 48",
+          "intent": "令牌字段改一个即失效",
+          "expected": "TOKEN_MISMATCH",
+          "actual": "令牌数量 24 被篡改为 48 → TOKEN_MISMATCH",
+          "passed": true,
+          "cost_ms": 12.95,
+          "error": null
+        },
+        {
+          "id": "S3-03",
+          "name": "令牌重放（一次性）",
+          "intent": "同一令牌不能建两张单",
+          "expected": "第二次 TOKEN_USED",
+          "actual": "首次建单成功、令牌重放被拒：TOKEN_USED",
+          "passed": true,
+          "cost_ms": 34.21,
+          "error": null
+        },
+        {
+          "id": "S3-04",
+          "name": "跳步调用：未查库存/促销/销量直接校验",
+          "intent": "前置步骤门禁（代码强制）",
+          "expected": "STEP_VIOLATION 并给出下一步",
+          "actual": "跳步被拦：code=STEP_VIOLATION，missing=['库存核对', '促销状态确认', '销量依据核对']",
+          "passed": true,
+          "cost_ms": 1.51,
+          "error": null
+        },
+        {
+          "id": "S3-05",
+          "name": "写前预览工具对模型隐藏",
+          "intent": "干跑预览仅执行框架可调",
+          "expected": "TOOLS_SPEC 中不含 preview 工具",
+          "actual": "模型可见工具 11 个；preview_replenishment_draft 对模型不可见（True）",
+          "passed": true,
+          "cost_ms": 0.01,
+          "error": null
+        },
+        {
+          "id": "S3-06",
+          "name": "JWT 签名篡改",
+          "intent": "改一个字符即 401",
+          "expected": "401 UNAUTHORIZED",
+          "actual": "签名篡改被拒（HTTP 401，code=UNAUTHORIZED）",
+          "passed": true,
+          "cost_ms": 0.71,
+          "error": null
+        },
+        {
+          "id": "S3-07",
+          "name": "过期 JWT 冒充 admin",
+          "intent": "过期即失效，防角色提权",
+          "expected": "401 TOKEN_EXPIRED",
+          "actual": "过期 token 被拒（code=TOKEN_EXPIRED）",
+          "passed": true,
+          "cost_ms": 1501.49,
+          "error": null
+        },
+        {
+          "id": "S3-08",
+          "name": "改口话术数量覆盖攻击",
+          "intent": "数量由框架第一次抽取锁定",
+          "expected": "取第一处 20（多轮澄清由对话层处理）",
+          "actual": "多数量话术取第一处明确数量：20 箱（防覆盖）",
+          "passed": true,
+          "cost_ms": 0.01,
+          "error": null
+        },
+        {
+          "id": "S3-09",
+          "name": "超大数话术（一百箱）",
+          "intent": "无法可靠解析就拒答而不是猜",
+          "expected": "解析为 None，不参与校验",
+          "actual": "超范围中文数字返回 0（视为未提数量，不瞎猜）：None",
+          "passed": true,
+          "cost_ms": 0.01,
+          "error": null
+        },
+        {
+          "id": "S3-10",
+          "name": "检索陷阱：制度外问题①",
+          "intent": "制度中无答案必须判空，禁止编造",
+          "expected": "0 命中",
+          "actual": "制度外问题命中 0 条（期望判空拒答）",
+          "passed": true,
+          "cost_ms": 431.54,
+          "error": null
+        },
+        {
+          "id": "S3-11",
+          "name": "检索陷阱：制度外问题②",
+          "intent": "同上",
+          "expected": "0 命中",
+          "actual": "制度外问题命中 0 条",
+          "passed": true,
+          "cost_ms": 483.03,
+          "error": null
+        },
+        {
+          "id": "S3-12",
+          "name": "伪造 admin 身份直调写工具",
+          "intent": "角色再高也必须过令牌门禁",
+          "expected": "TOKEN_INVALID",
+          "actual": "伪造 admin 身份 + 空令牌 → TOKEN_INVALID",
+          "passed": true,
+          "cost_ms": 1.41,
+          "error": null
+        }
+      ]
+    },
+    {
+      "suite_id": "S4",
+      "suite_name": "权限场景",
+      "desc": "JWT 登录态、角色鉴权、跨店数据隔离、密码哈希",
+      "total": 10,
+      "passed": 10,
+      "failed": 0,
+      "pass_rate": 100.0,
+      "cost_ms": {
+        "p50": 0.92,
+        "p95": 12.94,
+        "max": 119.48,
+        "sum": 137.7
+      },
+      "cases": [
+        {
+          "id": "S4-01",
+          "name": "无 Authorization 头访问",
+          "intent": "未登录一律 401",
+          "expected": "401 UNAUTHORIZED",
+          "actual": "未携带凭证 → 401 UNAUTHORIZED",
+          "passed": true,
+          "cost_ms": 0.02,
+          "error": null
+        },
+        {
+          "id": "S4-02",
+          "name": "Basic 认证冒充 Bearer",
+          "intent": "仅接受 Bearer 方案",
+          "expected": "401 UNAUTHORIZED",
+          "actual": "非 Bearer 方案 → 401 UNAUTHORIZED",
+          "passed": true,
+          "cost_ms": 0.01,
+          "error": null
+        },
+        {
+          "id": "S4-03",
+          "name": "篡改已签发 token 的签名",
+          "intent": "签名校验拦截",
+          "expected": "401 UNAUTHORIZED",
+          "actual": "篡改签名 → 401 UNAUTHORIZED",
+          "passed": true,
+          "cost_ms": 0.5,
+          "error": null
+        },
+        {
+          "id": "S4-04",
+          "name": "过期 token 访问",
+          "intent": "12 小时有效期强制",
+          "expected": "401 TOKEN_EXPIRED",
+          "actual": "过期 token → 401 TOKEN_EXPIRED",
+          "passed": true,
+          "cost_ms": 0.45,
+          "error": null
+        },
+        {
+          "id": "S4-05",
+          "name": "口令哈希存储与校验",
+          "intent": "不存明文；错口令拒绝",
+          "expected": "pbkdf2$ 前缀 + 校验正确",
+          "actual": "口令以 PBKDF2 哈希存储（True）；错口令拒绝（True）；对口令通过（True）",
+          "passed": true,
+          "cost_ms": 119.48,
+          "error": null
+        },
+        {
+          "id": "S4-06",
+          "name": "店长正常登录",
+          "intent": "合法凭证放行并携带角色/门店",
+          "expected": "role=store_manager, store=S001",
+          "actual": "店长登录成功：role=store_manager, store=S001",
+          "passed": true,
+          "cost_ms": 0.92,
+          "error": null
+        },
+        {
+          "id": "S4-07",
+          "name": "店长访问管理后台（水平越权）",
+          "intent": "非 admin 一律 403",
+          "expected": "403 PERMISSION_DENIED",
+          "actual": "店长访问 admin 接口 → 403 PERMISSION_DENIED",
+          "passed": true,
+          "cost_ms": 0.85,
+          "error": null
+        },
+        {
+          "id": "S4-08",
+          "name": "管理员访问管理后台",
+          "intent": "admin 角色放行",
+          "expected": "放行",
+          "actual": "管理员访问后台放行：admin",
+          "passed": true,
+          "cost_ms": 1.28,
+          "error": null
+        },
+        {
+          "id": "S4-09",
+          "name": "跨店使用令牌（S001 → S002）",
+          "intent": "令牌绑定门店，防跨店冒用",
+          "expected": "TOKEN_MISMATCH",
+          "actual": "S001 签发的令牌拿到 S002 用 → TOKEN_MISMATCH",
+          "passed": true,
+          "cost_ms": 12.94,
+          "error": null
+        },
+        {
+          "id": "S4-10",
+          "name": "假密钥伪造 admin token",
+          "intent": "HS256 签名密钥不公开",
+          "expected": "401 UNAUTHORIZED",
+          "actual": "假密钥伪造 token → 401 UNAUTHORIZED",
+          "passed": true,
+          "cost_ms": 1.2,
+          "error": null
+        }
+      ]
+    },
+    {
+      "suite_id": "S5",
+      "suite_name": "故障场景",
+      "desc": "六类业务停止条件、转交单闭环、轮次上限、留存归档、脏输入不崩溃",
+      "total": 10,
+      "passed": 10,
+      "failed": 0,
+      "pass_rate": 100.0,
+      "cost_ms": {
+        "p50": 3.9,
+        "p95": 6.45,
+        "max": 9.49,
+        "sum": 40.7
+      },
+      "cases": [
+        {
+          "id": "S5-01",
+          "name": "停止条件①账实不一致（A004）",
+          "intent": "系统库存≠可售库存必须停下人工核对",
+          "expected": "blocking + STOCK_MISMATCH + 人工路径",
+          "actual": "账实不一致（系统 60 / 可售 12）→ 阻断 code=STOCK_MISMATCH，manual_path=有",
+          "passed": true,
+          "cost_ms": 3.35,
+          "error": null
+        },
+        {
+          "id": "S5-02",
+          "name": "停止条件②零销量（A003）",
+          "intent": "零销量不得推算建议量",
+          "expected": "blocking（依据缺失）",
+          "actual": "零销量 → 阻断 code=ZERO_SALES",
+          "passed": true,
+          "cost_ms": 2.76,
+          "error": null
+        },
+        {
+          "id": "S5-03",
+          "name": "停止条件③新品无销量记录（A005）",
+          "intent": "无历史不得推算",
+          "expected": "blocking（依据缺失）",
+          "actual": "新品无历史 → 阻断 code=NO_SALES_RECORD",
+          "passed": true,
+          "cost_ms": 9.49,
+          "error": null
+        },
+        {
+          "id": "S5-04",
+          "name": "停止条件④促销版本未确认（A003）",
+          "intent": "促销期销量引用前须确认版本",
+          "expected": "blocking + PROMO_VERSION_UNCONFIRMED",
+          "actual": "促销版本未确认 → 阻断 code=PROMO_VERSION_UNCONFIRMED",
+          "passed": true,
+          "cost_ms": 5.09,
+          "error": null
+        },
+        {
+          "id": "S5-05",
+          "name": "转交单归属规则（含未知码兜底）",
+          "intent": "每个错误码都有责任人",
+          "expected": "已知码命中规则，未知码兜底计划员",
+          "actual": "已知码归属：补货计划员/唐映秋/24h；未知码走兜底：补货计划员（不允许无人认领）",
+          "passed": true,
+          "cost_ms": 0.01,
+          "error": null
+        },
+        {
+          "id": "S5-06",
+          "name": "停止条件自动开转交单",
+          "intent": "停止≠结束：原因+接手人+时限",
+          "expected": "转交单落库且三要素齐全",
+          "actual": "转交单 #14 已开：补货计划员 唐映秋，时限 11-07 11:16",
+          "passed": true,
+          "cost_ms": 5.17,
+          "error": null
+        },
+        {
+          "id": "S5-07",
+          "name": "执行循环 5 轮上限",
+          "intent": "最多 5 轮，超限转人工",
+          "expected": "MAX_ROUNDS = 5",
+          "actual": "执行循环上限 MAX_ROUNDS=5（防死循环/防刷工具）",
+          "passed": true,
+          "cost_ms": 6.45,
+          "error": null
+        },
+        {
+          "id": "S5-08",
+          "name": "日志留存：到期盘点（只读）",
+          "intent": "先归档后删除，可预览",
+          "expected": "preview 正常返回且不删数据",
+          "actual": "留存期 90 天，截止 2026-08-08，到期表盘点：{'messages': 0, 'agent_steps': 0, 'agent_actions': 0, 'agent_incidents': 0, 'agent_runs': 0, 'sessions': 0}",
+          "passed": true,
+          "cost_ms": 3.9,
+          "error": null
+        },
+        {
+          "id": "S5-09",
+          "name": "脏输入：不存在的 SKU / 工具",
+          "intent": "任何异常都转结构化错误",
+          "expected": "SKU_NOT_FOUND / TOOL_NOT_FOUND",
+          "actual": "不存在 SKU → code=SKU_NOT_FOUND；不存在工具 → code=TOOL_NOT_FOUND（均为结构化错误，不崩溃）",
+          "passed": true,
+          "cost_ms": 1.66,
+          "error": null
+        },
+        {
+          "id": "S5-10",
+          "name": "脏输入：非法日期格式",
+          "intent": "日期解析失败不崩溃",
+          "expected": "DATE_INVALID",
+          "actual": "非法日期 → code=DATE_INVALID",
+          "passed": true,
+          "cost_ms": 2.82,
+          "error": null
+        }
+      ]
+    }
+  ],
+  "total": 57,
+  "passed": 57,
+  "pass_rate": 100.0
+}

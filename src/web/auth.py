@@ -99,24 +99,35 @@ def decode_token(token: str) -> dict:
 # ============================================================
 
 def get_current_user(request: Request) -> dict:
-    """登录态依赖：优先 Authorization: Bearer <token>，其次 Cookie: access_token。
+    """登录态依赖：按顺序尝试多条通道，取第一个验签通过的凭据。
 
-    Cookie 回退是给「托管环境反向代理会剥离 Authorization 头」准备的：
-    浏览器同源访问时登录接口会写入 HttpOnly Cookie，请求自动携带；
-    本地开发与脚本调用仍走 Bearer，行为不变。
+    为什么需要多通道：托管环境的反向代理会注入/覆盖 Authorization 头，
+    也会过滤自定义 Cookie 之外的部分凭证；实测云端只有 query 参数能完整到达。
+    本地开发与脚本调用仍以 Bearer 为主，行为不变。
+
+    通道优先级：Authorization → X-Access-Token → Cookie → query 参数 token
     """
     auth_header = request.headers.get("Authorization", "")
-    token = auth_header[len("Bearer "):] if auth_header.startswith("Bearer ") else ""
-    if not token:
-        token = request.headers.get("X-Access-Token", "")
-    if not token:
-        token = request.cookies.get("access_token", "")
-    if not token:
-        token = request.query_params.get("token", "")
-    if not token:
-        raise HTTPException(status_code=401, detail={"code": "UNAUTHORIZED",
-                                                     "message": "未登录或登录凭证无效"})
-    return decode_token(token)
+    candidates = [
+        auth_header[len("Bearer "):] if auth_header.startswith("Bearer ") else "",
+        request.headers.get("X-Access-Token", ""),
+        request.cookies.get("access_token", ""),
+        request.query_params.get("token", ""),
+    ]
+    last_exc = None
+    for token in candidates:
+        if not token:
+            continue
+        try:
+            return decode_token(token)
+        except HTTPException as e:
+            last_exc = e          # 该通道无效（被代理注入的假头），继续试下一条
+    if isinstance(last_exc, HTTPException):
+        raise HTTPException(status_code=401,
+                            detail=last_exc.detail if isinstance(last_exc.detail, dict)
+                            else {"code": "UNAUTHORIZED", "message": "未登录或登录凭证无效"})
+    raise HTTPException(status_code=401, detail={"code": "UNAUTHORIZED",
+                                                 "message": "未登录或登录凭证无效"})
 
 
 def require_admin(user: dict = Depends(get_current_user)) -> dict:
