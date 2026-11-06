@@ -11,9 +11,9 @@
 ## 测试交付物与线上 MVP
 
 - **MVP 上线地址**：https://store-replenishment-agent.app.workbuddy.host/ （演示账号：店长 `store01` / `store@123`，管理员 `admin` / `admin@123`）
-- **量化测试方案**（正常/边界/对抗/权限/故障五类场景，57 条用例 100% 通过）：[`test-deliverables/门店补货与库存协同-测试方案.md`](test-deliverables/门店补货与库存协同-测试方案.md)（另附同名 docx）
-- **五类场景可视化测试过程**（有图有过程）：`test-deliverables/正常场景测试.docx`、`边界场景测试.docx`、`对抗场景测试.docx`、`权限场景测试.docx`、`故障场景测试.docx`
-- **部署说明（上线地址与冒烟报告）**：[`test-deliverables/门店补货与库存协同-部署说明.md`](test-deliverables/门店补货与库存协同-部署说明.md)（另附同名 docx）
+- **量化测试方案**（正常/边界/对抗/权限/故障五类场景，57 条用例 100% 通过）：[`test/1-测试方案/门店补货与库存协同-测试方案.md`](test/1-测试方案/门店补货与库存协同-测试方案.md)（另附同名 docx）
+- **五类场景可视化测试过程**（有图有过程）：`test/2-场景测试过程/正常场景测试.docx`、`边界场景测试.docx`、`对抗场景测试.docx`、`权限场景测试.docx`、`故障场景测试.docx`
+- **部署说明（上线地址与冒烟报告）**：[`test/3-上线部署/门店补货与库存协同-部署说明.md`](test/3-上线部署/门店补货与库存协同-部署说明.md)（另附同名 docx）
 - **一键复现**：`python scripts/run_scenario_tests.py`（离线执行，不调用大模型 API）
 
 ## 项目结构
@@ -41,6 +41,10 @@
 │       ├── 补货制度.md        # 种子知识库文档
 │       └── run_local.bat     # 一键启动（自动探测 Python、依赖检查、配置自检）
 ├── docs/                     # 项目文档（按清单编号 1~9 分文件夹，索引见 docs/README.md）
+├── test/                     # 测试与上线交付物（按清单编号 1~3）
+│   ├── 1-测试方案/            # 量化测试方案（五类场景 57 条用例，md + docx）
+│   ├── 2-场景测试过程/        # 五份场景化测试过程 docx + figures 图 + results.json
+│   └── 3-上线部署/            # 上线部署说明（含 MVP 访问地址与冒烟报告，md + docx）
 ├── tests/
 │   └── test_framework_basics.py  # 框架层单元测试：数量抽取防线、工具风险分区一致性
 ├── eval/

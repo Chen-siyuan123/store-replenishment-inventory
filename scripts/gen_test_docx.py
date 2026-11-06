@@ -4,12 +4,12 @@
 scripts/gen_test_docx.py —— 通过本地 editor_sdk 生成测试交付 docx
 ================================================================
 生成：
-  test-deliverables/门店补货与库存协同-测试方案.docx
-  test-deliverables/正常场景测试.docx / 边界场景测试.docx / 对抗场景测试.docx
-  test-deliverables/权限场景测试.docx / 故障场景测试.docx
+  test/2-场景测试过程/门店补货与库存协同-测试方案.docx
+  test/2-场景测试过程/正常场景测试.docx / 边界场景测试.docx / 对抗场景测试.docx
+  test/2-场景测试过程/权限场景测试.docx / 故障场景测试.docx
 
 内容来自 output/scenario-tests/results.json（真实执行结果），图表来自
-test-deliverables/figures/。走 edsdk.py（editor_sdk MCP 封装）。
+test/2-场景测试过程/figures/。走 edsdk.py（editor_sdk MCP 封装）。
 """
 
 import io
@@ -24,8 +24,8 @@ ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), 
 ESDK = ("C:/Users/陈思媛/AppData/Local/Programs/WorkBuddy/resources/app.asar.unpacked/"
         "resources/plugins/workbuddy-builtin/skills/workbuddy-local-office-edit/edsdk.py")
 RESULTS = os.path.join(ROOT, "output", "scenario-tests", "results.json")
-FIGS = os.path.join(ROOT, "test-deliverables", "figures")
-OUT_DIR = os.path.join(ROOT, "test-deliverables")
+FIGS = os.path.join(ROOT, "test", "2-场景测试过程", "figures")
+OUT_DIR = os.path.join(ROOT, "test", "2-场景测试过程")
 MD_TMP = os.path.join(ROOT, "output", "scenario-tests")
 
 data = json.load(io.open(RESULTS, encoding="utf-8"))

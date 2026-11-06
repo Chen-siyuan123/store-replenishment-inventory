@@ -7,8 +7,8 @@ import os
 import sys
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
-OUT = os.path.join(ROOT, "test-deliverables", "门店补货与库存协同-部署说明.docx")
-MD = os.path.join(ROOT, "test-deliverables", "门店补货与库存协同-部署说明.md")
+OUT = os.path.join(ROOT, "test", "3-上线部署", "门店补货与库存协同-部署说明.docx")
+MD = os.path.join(ROOT, "test", "3-上线部署", "门店补货与库存协同-部署说明.md")
 
 spec = importlib.util.spec_from_file_location(
     "g", os.path.join(ROOT, "scripts", "gen_test_docx.py"))

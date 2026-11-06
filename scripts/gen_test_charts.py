@@ -23,7 +23,7 @@ from matplotlib.patches import FancyBboxPatch, FancyArrowPatch
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 RESULTS = os.path.join(ROOT, "output", "scenario-tests", "results.json")
-FIG_DIR = os.path.join(ROOT, "test-deliverables", "figures")
+FIG_DIR = os.path.join(ROOT, "test", "2-场景测试过程", "figures")
 
 plt.rcParams["font.sans-serif"] = ["Microsoft YaHei", "SimHei"]
 plt.rcParams["axes.unicode_minus"] = False
