@@ -160,8 +160,8 @@
     <h1>门店补货与库存协同智能体</h1>
     <p class="sub">8 家试点店 · 「先出草稿、店长确认、再提交」的补货申请链路</p>
     <div class="meta">
-      <span><b>版本</b> v1.0</span>
-      <span><b>日期</b> 2026-11-05</span>
+      <span><b>版本</b> v1.1</span>
+      <span><b>日期</b> 2026-11-06</span>
       <span><b>范围</b> prototype/web（FastAPI + SQLite + GLM-4-Flash + 自研 Harness）</span>
       <span><b>项数</b> 5 维度 × 5 项 = 25</span>
     </div>
@@ -169,26 +169,26 @@
 
   <section class="verdict">
     <h2>评审结论（先说不可上线的地方）</h2>
-    <p>按现有代码逐项核对，<strong>25 项中只有 7 项已具备，其余 18 项需补，其中 7 项属上线阻塞级</strong>。当前系统功能链路是通的（4 轮完成建单、中断确认、落库数量一致均已验证），但「出问题时不丢单、不重复、能退回旧版」这层还没建起来。建议：<strong>补齐 7 项阻塞项后再开试点</strong>，其余 11 项可在首周人工兜底的前提下带条件上线。</p>
+    <p>按现有代码逐项核对，<strong>25 项中 8 项已具备，其余 17 项需补，其中 6 项属上线阻塞级</strong>。当前系统功能链路是通的（4 轮完成建单、中断确认、落库数量一致均已验证），但「出问题时不丢单、不重复、能退回旧版」这层还没建起来。建议：<strong>补齐 6 项阻塞项后再开试点</strong>，其余 11 项可在首周人工兜底的前提下带条件上线。</p>
     <ul>
-      <li><b>最需要先做的三件事</b>：① 校验令牌从进程内存 <code>tools._SESSIONS</code> 落到 Redis/DB —— 现在服务一重启，待确认的申请就会 <code>TOKEN_INVALID</code>，正是「草稿丢失」；② 加限流中间件 —— 目前 <code>server.py</code> 无任何配额控制，8 店同点峰值会直接打到模型侧；③ 加 <code>AGENT_ENABLED</code> 降级开关 —— 现在出问题只能改代码回退。</li>
+      <li><b>最需要先做的三件事</b>：① 校验令牌从进程内存 <code>tools._SESSIONS</code> 落到 Redis/DB —— 浏览器刷新已能靠 <code>/api/agent/pending</code> 把待确认卡恢复出来，但服务一重启令牌即失效，确认会 <code>TOKEN_INVALID</code>，这条仍是「草稿丢失」的主路径；② 加限流中间件 —— 目前 <code>server.py</code> 无任何配额控制，8 店同点峰值会直接打到模型侧；③ 加 <code>AGENT_ENABLED</code> 降级开关 —— 现在出问题只能改代码回退。</li>
       <li><b>最需要改设计的一件</b>：知识库删除是物理删除（<code>kb.delete_document</code> 直接删切片并重建索引），制度文档误删后只能重传，且向量要重算。必须改成软删 + 备份。</li>
     </ul>
   </section>
 
   <section class="stats">
     <div class="stat"><div class="n">25</div><div class="l">检查项总数</div></div>
-    <div class="stat g"><div class="n">7</div><div class="l">已具备，待验证</div></div>
+    <div class="stat g"><div class="n">8</div><div class="l">已具备，待验证</div></div>
     <div class="stat a"><div class="n">11</div><div class="l">需补强（非阻塞）</div></div>
-    <div class="stat r"><div class="n">7</div><div class="l">阻塞上线</div></div>
+    <div class="stat r"><div class="n">6</div><div class="l">阻塞上线</div></div>
   </section>
 
   <div class="toolbar">
     <div class="filters">
       <button class="on" data-f="all">全部 25</button>
-      <button data-f="blocked">阻塞 7</button>
+      <button data-f="blocked">阻塞 6</button>
       <button data-f="todo">需补 11</button>
-      <button data-f="ready">已具备 7</button>
+      <button data-f="ready">已具备 8</button>
     </div>
     <div class="progress">
       <span id="ptext">已通过 0 / 25</span>
@@ -224,11 +224,11 @@
       </dl>
     </article>
 
-    <article class="item" data-state="blocked">
+    <article class="item" data-state="ready">
       <div class="item-head">
         <span class="idx">A2</span>
         <h3>会话与调用日志保留策略</h3>
-        <span class="badge blocked">阻塞 · 需补</span>
+        <span class="badge ready">已具备 · 待验证</span>
         <label class="ck"><input type="checkbox" data-id="A2">已通过</label>
       </div>
       <p class="desc">对话与轨迹表设保留期并自动清理：<code>messages</code> 90 天、<code>agent_runs/steps/actions</code> 180 天；但<b>补货申请的创建/确认/提交审计记录保留 2 年</b>，不随对话清理删除。</p>
@@ -236,7 +236,7 @@
         <div><dt>负责人角色</dt><dd>DBA（主）+ 安全合规（定保留期）</dd></div>
         <div><dt>验证方法</dt><dd>插入 200 天前的假 run/step/message，跑清理脚本，核对三表行数与归档 JSON 行数；再查已提交草稿的审计链是否完整。</dd></div>
         <div><dt>通过标准</dt><dd>超期记录 0 条残留；归档文件可解析且行数一致；归档后仍能答「谁在何时提交了哪一单」。</dd></div>
-        <div class="wide"><dt>现状</dt><dd>三张轨迹表与 <code>messages</code> 均<b>无保留期、无清理任务、无归档</b>，SQLite 单文件只增不减。需新增 <code>scripts/retention.py</code> + 每日定时任务，并在 README 写明。</dd></div>
+        <div class="wide"><dt>现状</dt><dd>已实现 <code>retention.py</code>：<code>preview()</code> 只数不删，<code>execute()</code> 必须显式传 <code>confirm=ARCHIVE</code>；删除前先把整行写进 <code>archive/retention-*.jsonl</code>，落盘成功才执行 DELETE（同一事务，失败一起回滚）；<code>replenishment_drafts</code>、有草稿的会话、未处理的确认卡与转交单全部不清理，未完成 run（<code>running</code>/<code>waiting_confirm</code>）也跳过。<br><b>与要求有一处偏差</b>：各表统一按 <code>RETENTION_DAYS</code>（默认 90 天）计算，未按 messages 90 / 轨迹 180 分级，轨迹数据会早删 90 天——但归档 JSONL 可解析回灌，且先归档后删除，风险可控。补分级只需把 <code>PURGE_TABLES</code> 的二元组扩成「表名 / 时间列 / 筛选条件 / 天数」四元素。</dd></div>
       </dl>
     </article>
 
@@ -436,7 +436,7 @@
         <div><dt>负责人角色</dt><dd>后端技术负责人（主）+ 算法/Agent 工程师</dd></div>
         <div><dt>验证方法</dt><dd>确认卡出现后 <code>kill -9</code> 进程重启，再点确认；另开无痕窗口用同账号登录，调 <code>/api/agent/pending</code> 看是否还在；关浏览器十分钟再回来。</dd></div>
         <div><dt>通过标准</dt><dd>重启后待确认项仍在且能成功提交；草稿列表可见「待确认」条目；全程 0 次 <code>TOKEN_INVALID</code>；无「草稿丢失」客诉路径。</dd></div>
-        <div class="wide"><dt>现状</dt><dd><b>最大缺口。</b><code>replenishment_drafts.status</code> 只有 <code>draft/submitted/allocated/rejected</code>，中断发生时草稿尚未 INSERT；令牌存在 <code>tools._SESSIONS</code>（进程内存，TTL 900s）。重启即失效，<code>POST /api/agent/confirm</code> 会返回 <code>TOKEN_INVALID</code>。</dd></div>
+        <div class="wide"><dt>现状</dt><dd><b>部分具备，仍阻塞。</b>「浏览器刷新 / 换设备」这一路已经通了：确认卡出现时 pending 动作已落 <code>agent_actions</code>（<code>status='pending'</code>），<code>GET /api/agent/pending</code> 走 <code>get_pending_by_session()</code> 能把卡恢复出来，同账号换窗口登录也看得到。<br><b>「服务重启」这一路没通</b>：校验令牌存在 <code>tools._SESSIONS</code>（进程内存，TTL 900s），重启即失效，<code>POST /api/agent/confirm</code> 返回 <code>TOKEN_INVALID</code>；且草稿要等确认后才 INSERT，中断期间 <code>replenishment_drafts</code> 里没有 <code>awaiting_confirm</code> 行，草稿列表看不到「待确认」。要过这一项，需把令牌与 pending 动作一起持久化（DB/Redis），并在确认卡出现时就先写一条草稿行。</dd></div>
       </dl>
     </article>
 
@@ -658,7 +658,7 @@
   </section>
 
   <footer>
-    <p><b>使用方式</b>：每条勾选前请实际执行「验证方法」并把结果贴在评审记录里，不要凭印象勾。7 项阻塞项全部通过、11 项需补项给出带期限的整改计划后，方可进入 2 店灰度。</p>
+    <p><b>使用方式</b>：每条勾选前请实际执行「验证方法」并把结果贴在评审记录里，不要凭印象勾。6 项阻塞项全部通过、11 项需补项给出带期限的整改计划后，方可进入 2 店灰度。</p>
     <p><b>责任分工建议</b>：后端技术负责人（A1/A3/A5/B2/B5/C3/C4/C5/D4/E1）、算法 Agent 工程师（B4/C1/C2/D1/D3/E4）、DBA（A2/E2/E3）、SRE（A4/B1/E5）、安全合规（A2/A4/D2）、测试 QA（A3/B1/C4/D1）、产品经理（B3/D5/E5）、业务顾问（C2/D3/D5/E3）。</p>
     <p style="margin-top:14px;color:#9aa19b">勾选状态仅保存在本机浏览器，不上传。打印时自动隐藏勾选框与筛选条，可直接作为评审签字页。</p>
   </footer>
