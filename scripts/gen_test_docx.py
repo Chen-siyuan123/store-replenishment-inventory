@@ -4,9 +4,12 @@
 scripts/gen_test_docx.py —— 通过本地 editor_sdk 生成测试交付 docx
 ================================================================
 生成：
-  test/2-场景测试过程/门店补货与库存协同-测试方案.docx
+  test/1-测试方案/门店补货与库存协同-测试方案.docx
   test/2-场景测试过程/正常场景测试.docx / 边界场景测试.docx / 对抗场景测试.docx
   test/2-场景测试过程/权限场景测试.docx / 故障场景测试.docx
+
+测试方案 docx 的附录 A（57 条用例明细）从同目录的 md 版第 3 节解析生成，
+保证 md 与 docx 内容一致、不靠人工同步。
 
 内容来自 output/scenario-tests/results.json（真实执行结果），图表来自
 test/2-场景测试过程/figures/。走 edsdk.py（editor_sdk MCP 封装）。
@@ -15,6 +18,7 @@ test/2-场景测试过程/figures/。走 edsdk.py（editor_sdk MCP 封装）。
 import io
 import json
 import os
+import re
 import subprocess
 import sys
 
@@ -26,6 +30,8 @@ ESDK = ("C:/Users/陈思媛/AppData/Local/Programs/WorkBuddy/resources/app.asar.
 RESULTS = os.path.join(ROOT, "output", "scenario-tests", "results.json")
 FIGS = os.path.join(ROOT, "test", "2-场景测试过程", "figures")
 OUT_DIR = os.path.join(ROOT, "test", "2-场景测试过程")
+PLAN_DIR = os.path.join(ROOT, "test", "1-测试方案")
+PLAN_MD = os.path.join(PLAN_DIR, "门店补货与库存协同-测试方案.md")
 MD_TMP = os.path.join(ROOT, "output", "scenario-tests")
 
 data = json.load(io.open(RESULTS, encoding="utf-8"))
@@ -103,6 +109,48 @@ def insert_fig(fid, png, width=600):
 # 一、测试方案 docx
 # ============================================================
 
+def appendix_markdown():
+    """从测试方案 md 的第 3 节解析 57 条用例，生成附录 A 的 markdown。
+
+    md 与 docx 是两套稿子：正文各自成文，但用例明细只在 md 里。这里按
+    「### S1 …」分段、逐行解析表格，保证 docx 附录与 md 逐条一致，
+    以后改 md 重跑脚本即可自动同步，不用手工维护两份。
+    """
+    text = io.open(PLAN_MD, encoding="utf-8").read()
+    secs, cur = [], None
+    for ln in text.split("\n"):
+        m = re.match(r"^### (S\d) (.+)$", ln.strip())
+        if m:
+            cur = {"id": m.group(1), "title": m.group(2).strip(), "rows": []}
+            secs.append(cur)
+            continue
+        if cur is None:
+            continue
+        if ln.strip().startswith("## "):
+            cur = None
+            continue
+        if not ln.strip().startswith("|"):
+            continue
+        cells = [c.strip() for c in ln.strip().strip("|").split("|")]
+        if len(cells) < 3 or cells[0] == "#" or set("".join(cells)) <= set("-: "):
+            continue
+        cur["rows"].append(cells[:3])
+
+    total = sum(len(s["rows"]) for s in secs)
+    out = ["\n## 附录 A　%d 条用例明细（与 md 版一致）\n" % total,
+           "本附录逐条列出五类场景的用例编号、用例内容与量化断言，与仓库内 "
+           "`test/1-测试方案/门店补货与库存协同-测试方案.md` 第 3 节一一对应，"
+           "便于评审时脱离 Markdown 环境直接查阅。\n"]
+    for s in secs:
+        out.append("### %s %s\n" % (s["id"], s["title"]))
+        out.append("| # | 用例 | 量化断言 |")
+        out.append("| --- | --- | --- |")
+        for r in s["rows"]:
+            out.append("| " + " | ".join(r) + " |")
+        out.append("")
+    return "\n".join(out)
+
+
 def gen_plan_docx():
     print("生成：测试方案.docx")
     r = call("create_doc")
@@ -174,9 +222,12 @@ S1/S3 的 p95 偏高来自制度检索首次加载索引与 S3-07 故意的 1.5 
 本轮 57 条量化用例全部通过（100%），达到准出标准：主链路可用、边界判定准确、对抗 0 突破、越权 0 成功、故障 0 崩溃。结合 32 项单元测试与 30 条离线评测，系统具备进入 MVP 上线部署的质量条件。
 """)
 
+    # 附录 A：57 条用例明细，从 md 解析，保证两版内容一致
+    insert_md(fid, appendix_markdown())
+
     call("save_file", file_id=fid,
-         file_path=os.path.join(OUT_DIR, "门店补货与库存协同-测试方案.docx"))
-    print("  已保存")
+         file_path=os.path.join(PLAN_DIR, "门店补货与库存协同-测试方案.docx"))
+    print("  已保存（含附录 A：57 条用例明细）")
 
 
 # ============================================================
