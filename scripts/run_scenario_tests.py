@@ -35,7 +35,7 @@ from datetime import date, datetime, timedelta
 
 ROOT = os.path.abspath(os.path.join(os.path.dirname(os.path.abspath(__file__)), ".."))
 # 兼容两种仓库布局：新结构 src/2-MVP项目，旧结构 prototype/web
-_CANDIDATES = [os.path.join(ROOT, "src", "web"), os.path.join(ROOT, "prototype", "web")]
+_CANDIDATES = [os.path.join(ROOT, "src", "2-MVP项目"), os.path.join(ROOT, "prototype", "web")]
 WEB_DIR = next((p for p in _CANDIDATES if os.path.isdir(p)), _CANDIDATES[-1])
 sys.path.insert(0, WEB_DIR)
 os.chdir(WEB_DIR)

@@ -20,7 +20,7 @@ import json
 import os
 import sys
 
-WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "web")
+WEB_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "src", "2-MVP项目")
 sys.path.insert(0, os.path.abspath(WEB_DIR))
 os.chdir(WEB_DIR)
 
