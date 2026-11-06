@@ -44,8 +44,8 @@ docs 目录已按交付清单编号平铺（1~9 对应清单条目），评审�
 
 **其他对应**：
 
-- 架构设计里的「执行循环」对应 `prototype/web/agent/harness.py`
-- 「工具层与门禁」对应 `prototype/web/tools.py`
-- 「知识库检索」对应 `prototype/web/kb.py`、`kbstore.py`
-- 「日志留存」对应 `prototype/web/retention.py`（90 天先归档再删除）
+- 架构设计里的「执行循环」对应 `src/web/agent/harness.py`
+- 「工具层与门禁」对应 `src/web/tools.py`
+- 「知识库检索」对应 `src/web/kb.py`、`kbstore.py`
+- 「日志留存」对应 `src/web/retention.py`（90 天先归档再删除）
 - 上线检查清单中的每一项，都在该清单里标注了真实状态（已具备 / 需补 / 阻塞）

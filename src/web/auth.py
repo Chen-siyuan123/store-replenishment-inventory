@@ -99,12 +99,20 @@ def decode_token(token: str) -> dict:
 # ============================================================
 
 def get_current_user(request: Request) -> dict:
-    """登录态依赖：从 Authorization: Bearer <token> 解析用户信息。"""
+    """登录态依赖：优先 Authorization: Bearer <token>，其次 Cookie: access_token。
+
+    Cookie 回退是给「托管环境反向代理会剥离 Authorization 头」准备的：
+    浏览器同源访问时登录接口会写入 HttpOnly Cookie，请求自动携带；
+    本地开发与脚本调用仍走 Bearer，行为不变。
+    """
     auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
+    token = auth_header[len("Bearer "):] if auth_header.startswith("Bearer ") else ""
+    if not token:
+        token = request.cookies.get("access_token", "")
+    if not token:
         raise HTTPException(status_code=401, detail={"code": "UNAUTHORIZED",
                                                      "message": "未登录或登录凭证无效"})
-    return decode_token(auth_header[len("Bearer "):])
+    return decode_token(token)
 
 
 def require_admin(user: dict = Depends(get_current_user)) -> dict:

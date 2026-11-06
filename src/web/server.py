@@ -40,7 +40,7 @@ import os
 import re
 import uuid
 
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, Response
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
 from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
@@ -54,7 +54,7 @@ import retention  # 会话与调用日志留存/归档（f43）
 import tools    # 纯逻辑（日均口径 / 提交偏差判定）：不依赖 FastAPI，便于单测
 from agent import harness, store as agent_store   # 执行循环 + 轨迹/确认持久化
 from auth import (create_token, verify_password,
-                  get_current_user, require_admin)
+                  get_current_user, require_admin, JWT_EXPIRE_HOURS)
 from kbstore import KBParseError
 
 # ============================================================
@@ -143,8 +143,12 @@ class LoginRequest(BaseModel):
 
 
 @app.post("/api/login")
-def login(req: LoginRequest):
-    """登录：校验密码 → 签发 JWT（payload 含角色与门店）。"""
+def login(req: LoginRequest, response: Response):
+    """登录：校验密码 → 签发 JWT（payload 含角色与门店）。
+
+    同时写入 HttpOnly Cookie：托管环境的反向代理会剥离 Authorization 头，
+    浏览器同源访问靠 Cookie 维持登录态；脚本/本地仍可用返回的 token。
+    """
     with db.get_db() as conn:
         user = conn.execute(
             "SELECT * FROM users WHERE username = ? AND status = 'active'",
@@ -154,8 +158,11 @@ def login(req: LoginRequest):
     if not user or not verify_password(req.password, user["password_hash"]):
         return err("LOGIN_FAILED", "用户名或密码错误", 401)
 
+    token = create_token(user)
+    response.set_cookie("access_token", token, max_age=JWT_EXPIRE_HOURS * 3600,
+                        httponly=True, samesite="lax", secure=True, path="/")
     return {
-        "token": create_token(user),
+        "token": token,
         "username": user["username"],
         "role": user["role"],
         "store_id": user["store_id"],

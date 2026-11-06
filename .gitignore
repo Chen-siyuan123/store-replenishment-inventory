@@ -19,8 +19,8 @@ secret.key
 # ============================================================
 # 用户上传的知识库原件
 # ============================================================
-prototype/web/uploads/*
-!prototype/web/uploads/.gitkeep
+src/web/uploads/*
+!src/web/uploads/.gitkeep
 
 # ============================================================
 # Python
@@ -57,4 +57,4 @@ output/
 # ============================================================
 *.db.bak*
 *.db.bak_before_upgrade
-prototype/web/archive/
+src/web/archive/
