@@ -117,6 +117,7 @@
   .draft-card .btn-cancel { background: #f4f6f9; color: #5f5e5a; border: 1px solid #d3d1c7; }
   .draft-card .state { margin-top: 10px; font-size: 12px; }
   .draft-card .state.ok { color: #0f6e56; }
+  .draft-card .state.warn { color: #a3610f; }
   .draft-card .state.no { color: #888780; }
   /* ===== 执行前确认卡（写操作中断）===== */
   .confirm-card {
@@ -391,7 +392,7 @@ function addDraftCard(d) {
     '<div class="row"><span>线路余量</span><span class="v-line"></span></div>' +
     '<div class="basis"></div>' +
     '<div class="actions">' +
-    '  <button class="btn-confirm">确认提交（进入审批）</button>' +
+    '  <button class="btn-confirm">确认提交</button>' +
     '  <button class="btn-cancel">撤回草稿</button>' +
     '</div>' +
     '<div class="state"></div>';
@@ -435,8 +436,8 @@ async function submitDraft(id, card) {
   const resp = await apiFetch('/api/drafts/' + id + '/submit', { method: 'POST' });
   const data = await resp.json();
   if (resp.ok) {
-    state.className = 'state ok';
-    state.textContent = '✔ ' + (data.message || '已提交');
+    state.className = 'state ' + (data.needs_approval ? 'warn' : 'ok');
+    state.textContent = (data.needs_approval ? '！' : '✔ ') + (data.message || '已提交');
     card.querySelector('.actions').remove();
   } else {
     state.className = 'state no';
@@ -566,7 +567,7 @@ function addConfirmCard(data) {
     '<div class="row v-short" style="display:none"><span>未满足数量</span><span class="v-short-v"></span></div>' +
     '<div class="checks"></div>' +
     '<div class="adjust" style="display:none"></div>' +
-    '<div class="hint">确认后才会写入补货草稿；草稿仍需你点一次「确认提交」才会进入总部审批。</div>' +
+    '<div class="hint">确认后才会写入补货草稿；草稿仍需你点一次「确认提交」，提交后即记录在案。</div>' +
     '<div class="actions">' +
     '  <button class="btn-go">确认并生成草稿</button>' +
     '  <button class="btn-no">取消</button>' +

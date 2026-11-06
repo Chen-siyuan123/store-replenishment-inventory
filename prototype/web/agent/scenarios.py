@@ -236,7 +236,7 @@ def _scenario_b():
         "final_text": ("已生成补货申请草稿：鲜牛奶 1L，120 盒（10 箱 × 12 盒/箱），"
                        f"预计配送日 {next_day}。依据：可售库存 12 盒、近 7 天日均约 5 盒，"
                        "原申请的 20 箱（240 盒）超过单店分配上限 120 盒，已按整箱压到上限内。"
-                       "请在下方卡片点「确认提交」后才会进入总部审批。"),
+                       "请在下方卡片点「确认提交」，提交后即记录在案。"),
         "expect": {"status": "done", "max_rounds": 5,
                    "must_tools": ["search_sku", "get_sellable_inventory", "get_replenishment_policy",
                                   "validate_replenishment", "create_replenishment_draft"],

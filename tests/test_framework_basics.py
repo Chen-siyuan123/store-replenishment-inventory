@@ -21,6 +21,7 @@ tests/test_framework_basics.py —— 框架层纯函数与安全分区的单元
 
 import os
 import sys
+from datetime import date
 
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
                                 "..", "prototype", "web"))
@@ -101,6 +102,92 @@ class TestToolRiskPartition:
         # 校验类工具不改数据——只允许 read / verify 两级出现在非写集合
         assert all(lv in ("read", "verify", "write")
                    for lv in tools.TOOL_RISK.values())
+
+
+# ------------------------------------------------------------
+# 日均销量口径（断货日不得进分母）
+# ------------------------------------------------------------
+class TestAvgDailyBasis:
+    """日均销量的分母必须是「有销售记录的天数」。
+
+    原口径 total / days 把断货日当成「卖了 0 件」计入分母，日均被低估
+    → 建议量偏低 → 补了还是不够，且系统不报错（与 f31 断货截断同源）。
+    """
+
+    @staticmethod
+    def _rows(pairs):
+        return [{"sale_date": d, "qty": q} for d, q in pairs]
+
+    def test_denominator_is_days_with_records(self):
+        # 7 天里只有 3 天有记录，合计 30 → 日均 10，不是 30/7 ≈ 4.3
+        rows = self._rows([("2026-11-01", 10), ("2026-11-03", 12), ("2026-11-05", 8)])
+        assert tools.avg_daily_from_rows(rows) == (30, 10.0, 3)
+
+    def test_old_formula_would_underestimate(self):
+        # 回归护栏：一旦退回自然日分母，这条会立刻失败
+        rows = self._rows([("2026-11-01", 10), ("2026-11-03", 12), ("2026-11-05", 8)])
+        _, avg, _ = tools.avg_daily_from_rows(rows)
+        assert avg > 30 / 7
+
+    def test_no_rows_no_zero_division(self):
+        assert tools.avg_daily_from_rows([]) == (0, 0.0, 0)
+
+    def test_same_date_counted_once(self):
+        rows = self._rows([("2026-11-01", 5), ("2026-11-01", 7)])
+        total, avg, covered = tools.avg_daily_from_rows(rows)
+        assert (total, avg, covered) == (12, 12.0, 1)
+
+    def test_window_excludes_today(self):
+        # 今天还没过完，销量不完整，进窗口会把日均拉低
+        since, end = tools.sales_window(7, today=date(2026, 11, 6))
+        assert end == "2026-11-05"
+        assert since == "2026-10-30"          # 10-30 ~ 11-05，正好 7 天
+
+    def test_window_spans_exactly_n_days(self):
+        since, end = tools.sales_window(7, today=date(2026, 3, 1))
+        assert (date.fromisoformat(end) - date.fromisoformat(since)).days == 6
+        _, end30 = tools.sales_window(30, today=date(2026, 3, 1))
+        since30, _ = tools.sales_window(30, today=date(2026, 3, 1))
+        assert (date.fromisoformat(end30) - date.fromisoformat(since30)).days == 29
+
+
+# ------------------------------------------------------------
+# 提交偏差判定（提示人工复核，不是审批）
+# ------------------------------------------------------------
+class TestApprovalCheck:
+    """系统没有审批路由、没有 approver 字段，所以这里只能判定
+    「要不要线下确认」，不能返回「已批准」这种它做不到的结论。"""
+
+    def test_within_threshold(self):
+        need, dev = tools.approval_check(120, 130)
+        assert need is False and abs(dev - 0.0833) < 1e-3
+
+    def test_over_threshold(self):
+        need, dev = tools.approval_check(120, 200)
+        assert need is True and abs(dev - 0.6667) < 1e-3
+
+    def test_boundary_50pct_not_flagged(self):
+        # ±50% 边界以内（含正好 50%）不触发
+        assert tools.approval_check(100, 150)[0] is False
+        assert tools.approval_check(100, 50)[0] is False
+
+    def test_just_over_50pct_flagged(self):
+        assert tools.approval_check(100, 151)[0] is True
+
+    def test_missing_basis_returns_none(self):
+        assert tools.approval_check(0, 20) == (False, None)
+        assert tools.approval_check(None, 20) == (False, None)
+        assert tools.approval_check(20, 0) == (False, None)
+
+    def test_no_fake_approval_promise(self):
+        # 静态守护：提交接口不得再输出系统实际做不到的承诺。
+        # 无审批路由 / 无 approver 字段 / allocated 状态无写入点 → 不能说「等待总部确认」。
+        src_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "..", "prototype", "web", "server.py")
+        with open(src_path, encoding="utf-8") as f:
+            src = f.read()
+        assert "等待总部确认与仓库分配" not in src
+        assert "needs_approval" in src
 
 
 if __name__ == "__main__":

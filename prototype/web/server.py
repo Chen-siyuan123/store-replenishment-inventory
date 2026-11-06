@@ -51,6 +51,7 @@ import config   # 配置加载 + 自检。必须排在 kbstore 之前：
 import db       # 数据层（建表/种子/连接）
 import kbstore  # 【核心模块①②】知识库存取 + 混合检索（批次 2 数据库化）
 import retention  # 会话与调用日志留存/归档（f43）
+import tools    # 纯逻辑（日均口径 / 提交偏差判定）：不依赖 FastAPI，便于单测
 from agent import harness, store as agent_store   # 执行循环 + 轨迹/确认持久化
 from auth import (create_token, verify_password,
                   get_current_user, require_admin)
@@ -654,8 +655,23 @@ def submit_draft(draft_id: int, user: dict = Depends(get_current_user)):
         conn.execute(
             "UPDATE replenishment_drafts SET status = 'submitted', submitted_at = ? "
             "WHERE id = ?", (db.now(), draft_id))
+
+    # 提交后的去向必须如实描述：本系统没有审批路由、没有 approver 字段，
+    # allocated / rejected 两个状态也没有任何写入点，任何「等待总部确认 / 仓库分配」
+    # 之类的说法都等于承诺一条走不通的流程。这里只陈述实际发生的事，并把偏差超限
+    # 的情况交给线下确认——系统不冒充审批，只负责把风险指出来。
+    suggested = row["qty_suggested"]
+    requested = row["qty_requested"]
+    needs_approval, deviation = tools.approval_check(suggested, requested)
+
+    message = "补货申请已提交并记录在案（系统内不含审批与仓库分配环节）"
+    if needs_approval:
+        message += (f"；申请量 {int(requested)} 与建议量 {int(suggested)} "
+                    f"偏差 {deviation:.0%}，已超过 ±50%，请线下与补货计划员确认后再下单")
+
     return {"ok": True, "id": draft_id, "status": "submitted",
-            "message": "补货申请已提交，等待总部确认与仓库分配"}
+            "needs_approval": needs_approval, "deviation": deviation,
+            "message": message}
 
 
 @app.post("/api/drafts/{draft_id}/cancel")

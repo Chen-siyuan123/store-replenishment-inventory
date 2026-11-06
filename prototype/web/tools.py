@@ -612,6 +612,54 @@ def check_promotion_status(ctx, sku: str, confirm_version: str = ""):
     return _ok(f"促销版本已确认：{version}（促销期将按确认后的口径折算需求）", data)
 
 
+def sales_window(days: int, today=None):
+    """销量统计窗口：已经结束的 N 个自然日，不含今天。
+
+    今天还没过完，销量数据不完整——把它算进窗口会拉低日均（原口径偏低
+    的一部分原因就在这里）；分母再改成「有记录天数」时，这个不完整的当天
+    会更直接地把均值压下去。所以窗口和分母必须一起改，只改一个会换一种错法。
+
+    返回 (since, end)，均为 YYYY-MM-DD 字符串。
+    """
+    end = (today or date.today()) - timedelta(days=1)
+    return str(end - timedelta(days=days - 1)), str(end)
+
+
+def avg_daily_from_rows(rows):
+    """日均销量：分母只算「有销售记录的天数」，不按自然日天数摊。
+
+    原口径 total / days 会把断货日当成「卖了 0 件」计入分母，日均被系统性低估，
+    建议量随之下调、补了还是不够，而系统不会报错（与 f31 断货截断同源）。
+    分母换成有记录天数后，断货日不再稀释日均；代价是若该期间确实断过货，
+    日均会偏高——所以返回值带上覆盖天数，由调用方明确告知门店复核。
+
+    返回 (total, avg_daily, covered_days)
+    """
+    total = sum(int(r["qty"] or 0) for r in rows)
+    covered = len({r["sale_date"] for r in rows})
+    avg = round(total / covered, 1) if covered else 0.0
+    return total, avg, covered
+
+
+def approval_check(suggested, requested, threshold: float = 0.5):
+    """提交时的偏差判定：只回答「要不要线下找计划员确认」，不是审批。
+
+    系统内没有审批路由、没有 approver 字段，allocated / rejected 两个状态也没有
+    任何写入点，所以这里不能叫 approve。它只比较申请量与建议量的偏离幅度，
+    超过阈值就提示人工复核，避免系统伪造一条自己走不通的流程。
+
+    返回 (needs_approval, deviation)；deviation 为 None 表示缺依据、无法比较。
+    """
+    try:
+        s, r = int(suggested or 0), int(requested or 0)
+    except (TypeError, ValueError):
+        return False, None
+    if s <= 0 or r <= 0:
+        return False, None
+    dev = round(abs(r - s) / s, 4)
+    return dev > threshold, dev
+
+
 def get_sales_context(ctx, sku: str, days: int = 7):
     """销量依据核对：零销量 / 无记录 / 编码未归并 → 依据缺失，停止。"""
     raw = sku
@@ -619,7 +667,7 @@ def get_sales_context(ctx, sku: str, days: int = 7):
     if not sku:
         return _need_sku(raw)
     days = 30 if int(days or 7) >= 30 else 7
-    since = str(date.today() - timedelta(days=days - 1))
+    since, _end = sales_window(days)
 
     with db.get_db() as conn:
         rows = conn.execute(
@@ -638,10 +686,11 @@ def get_sales_context(ctx, sku: str, days: int = 7):
                 "SELECT main_code, note FROM sku_code_map WHERE alias_code = ?",
                 (sku_row["legacy_code"],)).fetchone()
 
-    total = sum(int(r["qty"] or 0) for r in rows)
-    avg = round(total / days, 1)
+    total, avg, covered = avg_daily_from_rows(rows)
     data = {"days": days, "total": total, "avg_daily": avg,
-            "records": len(rows), "since": since}
+            "records": len(rows), "since": since,
+            "coverage_days": covered,
+            "coverage_ratio": round(covered / days, 2) if days else 0.0}
 
     # 停止条件③：依据缺失（新旧编码未归并，且映射表里也没有）
     if sku_row and sku_row["legacy_code"] and not sku_row["code_merged"]:
@@ -676,7 +725,14 @@ def get_sales_context(ctx, sku: str, days: int = 7):
 
     _mark(ctx["session_id"], sku, "sales", True)
     _mark(ctx["session_id"], sku, "avg_daily", avg)
-    return _ok(f"销量依据核对完成：近 {days} 天合计 {total}，日均 {avg}", data)
+    # 口径必须随结果一起给出：分母改用有记录天数后，断货日不再稀释日均，
+    # 但若该期间确实断过货，日均会被高估——门店需据此复核，不能当成纯事实。
+    if covered < days:
+        scope = (f"（按有销售记录的 {covered}/{days} 天计算；"
+                 "缺失日若是断货会造成日均偏高、若是漏同步则偏低，请先核对原因）")
+    else:
+        scope = ""
+    return _ok(f"销量依据核对完成：近 {days} 天合计 {total}，日均 {avg}{scope}", data)
 
 
 def get_replenishment_policy(ctx, sku: str):
