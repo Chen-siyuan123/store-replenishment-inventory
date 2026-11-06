@@ -30,7 +30,7 @@ def pct(values: list[int], p: float) -> int:
 
 def collect() -> tuple[dict[str, list[int]], int]:
     if not DB_PATH.exists():
-        raise SystemExit(f"找不到数据库：{DB_PATH}（先跑 cd src/web && python -m agent.scenarios）")
+        raise SystemExit(f"找不到数据库：{DB_PATH}（先跑 cd src/2-MVP项目 && python -m agent.scenarios）")
     conn = sqlite3.connect(DB_PATH)
     rows = conn.execute(
         "select tool, duration_ms from agent_steps "

@@ -161,7 +161,7 @@ def export(conn: sqlite3.Connection, run_id: str) -> str:
         "## 附：怎么复现这条轨迹",
         "",
         "```bash",
-        "cd src/web && python -m agent.scenarios        # 跑三条离线轨迹（写库）",
+        "cd src/2-MVP项目 && python -m agent.scenarios        # 跑三条离线轨迹（写库）",
         "python scripts/export_run_trace.py                   # 列出最近运行，拿到 run_id",
         f"python scripts/export_run_trace.py --run-id {run['id']} --out docs/delivery/运行实录.md",
         "```",

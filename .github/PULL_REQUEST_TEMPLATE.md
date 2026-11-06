@@ -5,7 +5,7 @@
 ## 影响范围
 
 - [ ] 仅文档 / 注释
-- [ ] 业务工具（`src/web/tools.py`）
+- [ ] 业务工具（`src/2-MVP项目/tools.py`）
 - [ ] Agent 执行循环 / 门禁（`agent/harness.py`、`tools.py` 写操作链路）
 - [ ] 检索（`kb.py` / `kbstore.py`）
 - [ ] 前端 / 管理后台（`templates/`）

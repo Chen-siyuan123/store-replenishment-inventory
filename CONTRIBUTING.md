@@ -29,14 +29,14 @@ fix(eval): 无向量模型时不误判失败
 ```bash
 pip install -r requirements-dev.txt
 python -m ruff check .            # 仅确定性错误规则（E9/F63/F7/F82）
-python -m mypy src/web      # 可选，不设门禁
+python -m mypy src/2-MVP项目      # 可选，不设门禁
 ```
 
 ## 三、新增业务工具的固定四步
 
 工具是模型的唯一手脚，加一个工具要同步四处，少一处就会出现「模型能调、但拦不住」的漏洞：
 
-1. `src/web/tools.py` 里实现函数，返回统一结构 `{ok, blocking, message, data}`；阻塞类错误必须带 `code` 与 `blocking_reason`；
+1. `src/2-MVP项目/tools.py` 里实现函数，返回统一结构 `{ok, blocking, message, data}`；阻塞类错误必须带 `code` 与 `blocking_reason`；
 2. 在 `TOOLS_SPEC` 注册 JSON Schema，同时在 `TOOL_RISK` 声明风险等级（`read` / `verify` / `write`）；
 3. 只读工具补进 `tests/test_framework_basics.py` 的风险分区断言——**写操作全系统只能有 `create_replenishment_draft` 一个**，新增写工具等于改动防线，需要先讨论；
 4. `eval/cases_v1.json` 至少加一条用例，覆盖「该调用」与「不该调用」两个方向。

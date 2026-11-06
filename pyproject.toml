@@ -15,8 +15,8 @@ authors = [{ name = "陈思媛" }]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# 测试需要 import src/web 下的模块，避免每个测试文件都手写 sys.path
-pythonpath = ["src/web"]
+# 测试需要 import src/2-MVP项目 下的模块，避免每个测试文件都手写 sys.path
+pythonpath = ["src/2-MVP项目"]
 addopts = "-q"
 filterwarnings = [
     "ignore::DeprecationWarning",
@@ -29,8 +29,8 @@ exclude = [
     ".git",
     ".workbuddy",
     "output",
-    "src/stage1",
-    "src/web/archive",
+    "src/1-问答助手归档",
+    "src/2-MVP项目/archive",
 ]
 
 [tool.ruff.lint]

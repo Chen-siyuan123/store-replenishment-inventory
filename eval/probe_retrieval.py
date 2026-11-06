@@ -12,7 +12,7 @@ kbstore.search（与 search_policy_docs 工具同一套混合检索），
 
 只读：不写库、不调 LLM、不消耗 API 额度。
 
-用法：cd src/web && python ../../eval/probe_retrieval.py
+用法：cd src/2-MVP项目 && python ../../eval/probe_retrieval.py
 """
 
 import io

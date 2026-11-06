@@ -35,7 +35,7 @@ import config
 # ============================================================
 
 KB_PATH = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
-                       "data", "补货制度.md")  # 知识库文档路径（src/data/补货制度.md）
+                       "data", "补货制度.md")  # 知识库文档路径（src/2-MVP项目/补货制度.md）
 
 CHUNK_SIZE = 500    # 每片最大 500 字
 CHUNK_OVERLAP = 50  # 相邻片重叠 50 字，防止条款被切断后丢失上下文

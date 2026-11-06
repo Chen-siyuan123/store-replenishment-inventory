@@ -1,7 +1,7 @@
 # 门店补货与库存协同智能体
 
 [![CI](https://github.com/Chen-siyuan123/store-replenishment-inventory/actions/workflows/ci.yml/badge.svg)](https://github.com/Chen-siyuan123/store-replenishment-inventory/actions/workflows/ci.yml)
-[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](src/web/requirements.txt)
+[![Python](https://img.shields.io/badge/Python-3.11%2B-3776AB?logo=python&logoColor=white)](src/2-MVP项目/requirements.txt)
 [![Tests](https://img.shields.io/badge/tests-13%20passed-brightgreen)](tests/test_framework_basics.py)
 [![Eval](https://img.shields.io/badge/eval-30%20cases-1f6feb)](eval/cases_v1.json)
 [![License](https://img.shields.io/badge/license-MIT-yellow)](LICENSE)
@@ -20,28 +20,27 @@
 
 ```
 ├── src/
-│   ├── web/                  # 可运行的 Web 原型（主体代码）
-│   │   ├── server.py         # FastAPI 入口：SSE 流式问答、HITL 确认、管理后台
-│   │   ├── agent/            # 自研轻量执行循环（Harness）
-│   │   │   ├── harness.py    # 模型决策 → 工具执行 → 结果回填，最多 5 轮；写操作执行前强制中断
-│   │   │   ├── store.py      # agent_runs / agent_steps / agent_actions 轨迹三表
-│   │   │   ├── incidents.py  # 停止条件转交：错误码 → 责任岗位 / 接手人 / 处理时限
-│   │   │   └── scenarios.py  # 离线回放与评测脚本（ScriptedLLM / OfflineKB）
-│   │   ├── tools.py          # 业务工具 + 风险分级（read/verify/write）+ 四重写入门禁
-│   │   ├── kb.py / kbstore.py # 制度知识库：BM25(jieba) + FAISS 混合检索、两级相关性门禁
-│   │   ├── retention.py      # 日志留存：到期先导出 archive/*.jsonl 再删除
-│   │   ├── db.py             # SQLite 建表、种子数据、迁移
-│   │   ├── auth.py           # JWT 登录态 + PBKDF2 密码哈希
-│   │   ├── llm.py            # GLM API 封装（流式 / tool-calling）
-│   │   ├── config.py         # .env 加载 + 中文配置自检
-│   │   ├── templates/        # login / kb / prompts / trace / audit 管理页
-│   │   └── run_local.bat     # 一键启动（自动探测 Python、依赖检查、配置自检）
-│   ├── stage1/               # 阶段 1：单脚本 RAG 原型（验证检索可行性，已被 web 取代）
-│   └── data/                 # 种子知识库文档（补货制度.md，web 与 stage1 共用）
-├── docs/                     # 项目文档（索引见 docs/README.md）
-│   ├── requirements/         # 需求发现报告、行业分析报告、一页纸需求清单
-│   ├── design/               # 技术架构设计、现状流程图、数智化流程图
-│   └── delivery/             # 上线前检查清单、试点报价单、验证与测试报告
+│   ├── 1-问答助手归档/        # 清单 src-1：问答助手归档
+│   │   ├── replenishment_proto.py  # 阶段 1 单脚本制度问答原型（切片→BM25+FAISS 检索→LLM 回答）
+│   │   └── 补货制度.md             # 归档自带的种子制度文档
+│   └── 2-MVP项目/             # 清单 src-2：MVP 项目（工程架构 / Agent框架 / 知识库 / 人工确认点）
+│       ├── server.py         # FastAPI 入口：SSE 流式问答、HITL 确认、管理后台
+│       ├── agent/            # 自研轻量执行循环（Harness）
+│       │   ├── harness.py    # 模型决策 → 工具执行 → 结果回填，最多 5 轮；写操作执行前强制中断
+│       │   ├── store.py      # agent_runs / agent_steps / agent_actions 轨迹三表
+│       │   ├── incidents.py  # 停止条件转交：错误码 → 责任岗位 / 接手人 / 处理时限
+│       │   └── scenarios.py  # 离线回放与评测脚本（ScriptedLLM / OfflineKB）
+│       ├── tools.py          # 业务工具 + 风险分级（read/verify/write）+ 四重写入门禁
+│       ├── kb.py / kbstore.py # 制度知识库：BM25(jieba) + FAISS 混合检索、两级相关性门禁
+│       ├── retention.py      # 日志留存：到期先导出 archive/*.jsonl 再删除
+│       ├── db.py             # SQLite 建表、种子数据、迁移
+│       ├── auth.py           # JWT 登录态 + PBKDF2 密码哈希
+│       ├── llm.py            # GLM API 封装（流式 / tool-calling）
+│       ├── config.py         # .env 加载 + 中文配置自检
+│       ├── templates/        # login / kb / prompts / trace / audit 管理页
+│       ├── 补货制度.md        # 种子知识库文档
+│       └── run_local.bat     # 一键启动（自动探测 Python、依赖检查、配置自检）
+├── docs/                     # 项目文档（按清单编号 1~9 分文件夹，索引见 docs/README.md）
 ├── tests/
 │   └── test_framework_basics.py  # 框架层单元测试：数量抽取防线、工具风险分区一致性
 ├── eval/
@@ -86,7 +85,7 @@
 ## 本地运行
 
 ```bat
-cd src/web
+cd src/2-MVP项目
 run_local.bat
 ```
 
